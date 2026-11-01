@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>党政办 / 科学教育 / 体育 · 三域需求梳理总览</title>
+<style>
+  :root {
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --text: #1f2329;
+    --text-sub: #646a73;
+    --border: #e5e6eb;
+    --blue: #2f54eb;
+    --blue-bg: #eef1ff;
+    --green: #00b96b;
+    --green-bg: #e8f8f0;
+    --orange: #fa8c16;
+    --orange-bg: #fff4e8;
+    --red: #f5222d;
+    --red-bg: #fff1f0;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 32px 20px 60px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  header {
+    text-align: center;
+    padding: 28px 24px;
+    background: linear-gradient(135deg, #2f54eb 0%, #4c6ef5 100%);
+    color: #fff;
+    border-radius: 16px;
+    margin-bottom: 24px;
+  }
+  header h1 { font-size: 26px; font-weight: 700; letter-spacing: 1px; }
+  header p { font-size: 14px; opacity: 0.92; margin-top: 8px; }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .stat {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    text-align: center;
+  }
+  .stat .num { font-size: 30px; font-weight: 700; color: var(--blue); }
+  .stat .label { font-size: 13px; color: var(--text-sub); margin-top: 4px; }
+  .domain {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 28px;
+  }
+  .domain-head { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  .domain-head .tag {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 18px; color: #fff;
+  }
+  .domain-head h2 { font-size: 20px; font-weight: 700; }
+  .domain-sub { font-size: 13px; color: var(--text-sub); margin-bottom: 18px; }
+  .metrics {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;
+  }
+  .metric {
+    border-radius: 10px; padding: 14px 16px; font-size: 13px;
+  }
+  .metric b { display: block; margin-bottom: 4px; font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { background: #fafbfc; color: var(--text-sub); font-weight: 600; white-space: nowrap; }
+  td.code { font-family: "SF Mono", Consolas, monospace; font-weight: 600; white-space: nowrap; }
+  .pill { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .p0 { background: var(--red-bg); color: var(--red); }
+  .p1 { background: #f0f1f5; color: #6b7280; }
+  .foot {
+    margin-top: 18px; padding: 14px 16px; border-radius: 10px; font-size: 13px;
+  }
+  .blue-dom .tag { background: var(--blue); }
+  .blue-dom .metric { background: var(--blue-bg); }
+  .green-dom .tag { background: var(--green); }
+  .green-dom .metric { background: var(--green-bg); }
+  .orange-dom .tag { background: var(--orange); }
+  .orange-dom .metric { background: var(--orange-bg); }
+  .sec-title { font-size: 14px; font-weight: 700; margin: 18px 0 10px; color: var(--text); }
+  .excl { font-size: 13px; color: var(--text-sub); }
+  .excl li { margin: 3px 0; }
+  @media (max-width: 720px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .metrics { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div style="background:#fffbe6;border:1px solid #ffe58f;border-radius:12px;padding:14px 18px;margin-bottom:18px;font-size:13.5px;color:#ad6800;line-height:1.75;">
+    <b>置顶说明：本文件为过程性产物，内容已被 docs/13 全量总览覆盖，以 docs/13 为准。</b><br>
+    本文档只覆盖<b>党政办 / 科教 / 体育三域</b>的早期梳理结果，未包含后勤、教务、德育三域，也未包含本轮新增内容——统一场地对象 <b>space</b> 与 40901 / 40902 占用冲突校验、排课为权威源的单向校验、<b>R-DEAN 教务主任</b>（第 12 个预置角色）、M0505 数据字典 / M0507 流程模板 / M06–M08 教务域菜单、角色可扩展性规范、统一时间口径与「学期 / 自然月」维度切换器、报修类超期提醒等。<br>
+    上述内容均已同步进 <b>docs/13-全量需求总览与业务流程.html</b>。<b>查阅、评审与交付请以 docs/13 为准</b>；本文件保留仅作历史过程留痕，不再同步更新。
+  </div>
+  <header>
+    <h1>中学校务数字化平台 · 三域需求梳理总览</h1>
+    <p>党政办公室 · 科学教育 · 体育 &nbsp;|&nbsp; 需求阶段（门禁 1）已收口</p>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="num">3</div><div class="label">业务域</div></div>
+    <div class="stat"><div class="num">35</div><div class="label">需求条目</div></div>
+    <div class="stat"><div class="num">6</div><div class="label">硬指标（每域 2 条）</div></div>
+    <div class="stat"><div class="num">16</div><div class="label">新增菜单</div></div>
+  </div>
+
+  <!-- 党政办 -->
+  <div class="domain blue-dom">
+    <div class="domain-head"><div class="tag">党</div><h2>党政办公室</h2></div>
+    <div class="domain-sub">目标用户：校长（回执/时效/异常）· 党政办（留痕/流转/归档）· 教职工（少跑腿/知悉）　|　13 条需求 · 菜单 M12（7 子菜单）· 新增角色 R-PARTY</div>
+    <div class="metrics">
+      <div class="metric"><b>硬指标①【校长端】</b>公告已读率 / 公文流转时效 / 值班异常 / 会议纪要归档 —— 无需离开系统追问</div>
+      <div class="metric"><b>硬指标②【高频事务 ≤3 步】</b>查看公告、会议室预约、换班申请、用印申请</div>
+    </div>
+    <table>
+      <tr><th style="width:80px">编号</th><th>需求</th><th style="width:70px">优先级</th></tr>
+      <tr><td class="code">L1</td><td>通知公告发布（标题/正文/附件/可见角色集合/置顶，可见范围走角色维度配置）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">L2</td><td>公告撤回与已读回执（已读/未读名单 + 已读时间）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">L3</td><td>公文收文登记（来文单位/文号/标题/密级/紧急程度/扫描件，拟办意见）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">L4</td><td>公文发文登记（文号/标题/主送/抄送/签发人/正文，归档）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">L5</td><td>公文拟办/批示/传阅（流程模板配置的审批角色流转，全程留痕）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">L6</td><td>会议室预约（选会议室/时段/事由，冲突即时拦截）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">L7</td><td>会议通知（时间/地点/议题/参会人，回执参加/请假）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">L8</td><td>会议纪要归档（可检索）</td><td><span class="pill p1">P1</span></td></tr>
+      <tr><td class="code">L9</td><td>值班表编排（日期/时段/值班人/电话）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">L10</td><td>值班记录（情况/交接事项留痕）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">L11</td><td>换班申请（本人班次→目标班次/换班人，流程审批后值班表自动更新）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">L12</td><td>用印审批（用印事由/份数/文件，流程审批）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">L13</td><td>介绍信开具审批（事由/抬头/有效期，通过后生成编号）</td><td><span class="pill p1">P1</span></td></tr>
+    </table>
+    <div class="sec-title">明确排除项</div>
+    <ul class="excl">
+      <li>电子签章/CA 认证 · 红头文件排版引擎 · 外部 OA/政务公文对接 · 视频会议对接</li>
+      <li>保密公文分级加密（密级仅字段登记）· 固定线性审批（不含会签/或签/分支/转签）· 原生 App</li>
+    </ul>
+    <div class="foot" style="background:var(--blue-bg)">
+      <b>已确认决策：</b>R-PARTY（党政办，全校）采纳补缺；公告可见范围走角色维度（发布时选可见角色，非组织型三级）；值班换班审批由流程模板配置；公文密级仅登记不加密。
+    </div>
+  </div>
+
+  <!-- 科教 -->
+  <div class="domain green-dom">
+    <div class="domain-head"><div class="tag">科</div><h2>科学教育</h2></div>
+    <div class="domain-sub">目标用户：校长（产出/成果/趋势）· 科教负责人（组织/评审/归档）· 教师（少跑腿/共享）· 学生（参赛/查询）　|　12 条需求 · 菜单 M13（4 子菜单）· 复用现有角色</div>
+    <div class="metrics">
+      <div class="metric"><b>硬指标①【校长端】</b>资源下载量 / 竞赛获奖数 / 课题立项结题数 / 超期课题 —— 无需离开系统追问</div>
+      <div class="metric"><b>硬指标②【高频事务 ≤3 步】</b>上传资源、实验预约、竞赛报名、课题申报</div>
+    </div>
+    <table>
+      <tr><th style="width:80px">编号</th><th>需求</th><th style="width:70px">优先级</th></tr>
+      <tr><td class="code">M1</td><td>科教资源上传（标题/学科/类型/文件/简介/标签，提交审核）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">M2</td><td>资源分类检索（学科/类型/标签/关键词）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">M3</td><td>资源下载（有权限用户下载，记录下载量）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">M4</td><td>实验预约（实验室可预约资源 + 实验器材取自统一资产台账 asset，冲突拦截）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">M5</td><td>实验预约审批（流程模板配置的审批角色，通过后锁定时段）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">M6</td><td>竞赛项目发布（名称/类别/报名时间/评审规则/名额）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">M7</td><td>竞赛报名（教师/学生提交，选项目→填材料→提交）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">M8</td><td>竞赛评审与结果公示（流程模板配置的评审角色，公示归档）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">M9</td><td>课题申报（选题/论证/成员/周期）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">M10</td><td>课题立项审批（流程模板配置的审批角色）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">M11</td><td>课题过程材料（开题/中期/阶段成果留痕）</td><td><span class="pill p1">P1</span></td></tr>
+      <tr><td class="code">M12</td><td>课题结题（结题材料，流程审批，归档）</td><td><span class="pill p0">P0</span></td></tr>
+    </table>
+    <div class="sec-title">明确排除项</div>
+    <ul class="excl">
+      <li>资源在线预览/编辑 · 大文件断点续传/转码 · 实验安全/危化品台账 · 竞赛线上打分引擎</li>
+      <li>课题经费管理 · 固定线性审批（不含会签/或签/分支/转签）· 原生 App</li>
+    </ul>
+    <div class="foot" style="background:var(--green-bg)">
+      <b>已确认决策：</b>不新增 R-SCIENCE（复用 R-SUBJECT + R-TEACHER + 流程审批/评审角色）；资源审核后可见；学生竞赛可个人报名；实验器材纳入统一资产台账 asset（assetType=实验器材）。
+    </div>
+  </div>
+
+  <!-- 体育 -->
+  <div class="domain orange-dom">
+    <div class="domain-head"><div class="tag">体</div><h2>体育</h2></div>
+    <div class="domain-sub">目标用户：校长（达标率/成果/对比）· 体育教师（录入快/借还清/编排准）· 学生（参赛/查成绩）· 家长（看子女）　|　10 条需求 · 菜单 M14（5 子菜单）· 复用现有角色</div>
+    <div class="metrics">
+      <div class="metric"><b>硬指标①【校长端】</b>体测达标率 / 优良率 / 年级班级对比 / 赛事获奖数 / 器材借用频次 / 训练出勤率 —— 无需离开系统追问</div>
+      <div class="metric"><b>硬指标②【高频事务 ≤3 步】</b>体测成绩录入、器材借用、赛事报名</div>
+    </div>
+    <table>
+      <tr><th style="width:80px">编号</th><th>需求</th><th style="width:70px">优先级</th></tr>
+      <tr><td class="code">N1</td><td>体测成绩录入（分项目录入/导入，选班级/项目→录入→保存）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">N2</td><td>达标统计（国标/校级标准自动算达标率、优良率、项目分布）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">N3</td><td>年级/班级对比（体测成绩对比与趋势）</td><td><span class="pill p1">P1</span></td></tr>
+      <tr><td class="code">N4</td><td>赛事报名（学生/体育教师提交，选赛事/项目→填信息→提交）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">N5</td><td>赛程编排（项目/场次/时间/场地/参赛人，冲突即时拦截）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">N6</td><td>成绩记录与公示（记录、排名、公示期可异议）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">N7</td><td>器材台账（统一资产台账 asset，assetType=体育器材，入库/台账）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">N8</td><td>器材借用/归还（选器材→填数量/用途→提交，库存统一扣减/回补）</td><td><span class="pill p0">P0</span></td></tr>
+      <tr><td class="code">N9</td><td>训练队名单（队名/队员/训练时间维护）</td><td><span class="pill p1">P1</span></td></tr>
+      <tr><td class="code">N10</td><td>训练考勤（出勤记录 + 出勤率统计）</td><td><span class="pill p1">P1</span></td></tr>
+    </table>
+    <div class="sec-title">明确排除项</div>
+    <ul class="excl">
+      <li>体测仪器/穿戴设备对接 · 赛事直播/电子计时计分对接 · 运动损伤/健康档案</li>
+      <li>课间操与教务排课自动联动（仅提示不联动）· 固定线性审批 · 原生 App</li>
+    </ul>
+    <div class="foot" style="background:var(--orange-bg)">
+      <b>已确认决策：</b>不新增 R-SPORT（复用 R-SUBJECT 体育组 + R-TEACHER + R-LOGISTICS + 流程审批角色）；体测标准国标 + 字典可配置；体育器材纳入统一资产台账 asset（assetType=体育器材）；训练队与教务排课仅提示不联动。
+    </div>
+  </div>
+
+  <div style="text-align:center; color:var(--text-sub); font-size:12px; margin-top:8px;">
+    本总览整合自 docs/09-党政办PRD.md · docs/10-科教PRD.md · docs/11-体育PRD.md（需求阶段已收口）
+  </div>
+</div>
+</body>
+</html>

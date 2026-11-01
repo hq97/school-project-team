@@ -1,0 +1,46 @@
+{
+  "name": "school-affairs-server",
+  "version": "0.1.0",
+  "description": "中学校务数字化平台 · 服务端（NestJS 10 + TypeScript）",
+  "private": true,
+  "scripts": {
+    "build": "nest build",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/main",
+    "lint": "eslint --rulesdir eslint-rules \"{src,test}/**/*.ts\"",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:dev": "node scripts/assert-no-partial-index-drop.mjs && prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:guard": "node scripts/assert-no-partial-index-drop.mjs",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@nestjs/common": "^10.3.0",
+    "@nestjs/core": "^10.3.0",
+    "@nestjs/platform-express": "^10.3.0",
+    "@prisma/client": "^5.10.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "jsonwebtoken": "^9.0.2",
+    "reflect-metadata": "^0.1.14",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^10.3.0",
+    "@nestjs/schematics": "^10.1.0",
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.11",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "eslint": "^8.56.0",
+    "jest": "^29.7.0",
+    "prisma": "^5.10.0",
+    "typescript": "^5.3.3"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  }
+}

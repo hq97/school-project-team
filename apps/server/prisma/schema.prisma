@@ -1,0 +1,659 @@
+// 中学校务数字化平台 · 数据模型（六域 + 横切 + 平台）
+// 事实源：docs/02 §1.7（统一对象与边界）、docs/03（RBAC/菜单/字典）、docs/04（归属字段）、docs/07（流程模板）
+// 约定：枚举一律英文码，中文显示名由 sys_dict 字典提供（ADR §1.7 / ADR-01 码值约定），禁止中文字面量入库。
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============ 枚举（英文码，中文名走字典） ============
+
+enum DataScope {
+  SELF
+  GRADE
+  ALL
+}
+
+enum OwnershipType {
+  ORG // 组织型（部门树）
+  RELATION // 关系型（家长-子女）
+  ROLE_GRANT // 角色授权型（公告）
+}
+
+enum DeptType {
+  SCHOOL
+  GRADE
+  CLASS
+  SUBJECT
+  OFFICE
+}
+
+enum SpaceType {
+  CLASSROOM
+  LAB
+  MEETING_ROOM
+  SPORT_VENUE
+}
+
+enum SpaceStatus {
+  AVAILABLE
+  DISABLED
+  REPAIRING
+}
+
+enum AssetType {
+  MATERIAL // 后勤物资
+  LAB_EQUIP // 科教实验器材
+  SPORT_EQUIP // 体育器材
+}
+
+enum AssetStatus {
+  IN_STOCK
+  LENT
+  REPAIRING
+  SCRAPPED
+}
+
+enum OccupancySource {
+  SCHEDULE // 排课占用（权威来源）
+  RESERVATION // 预约占用
+}
+
+enum OccupancyStatus {
+  PENDING // 待确认
+  EFFECTIVE // 已生效
+  CANCELLED // 已取消/已驳回（唯一索引不约束）
+}
+
+enum AccountStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum StudentStatus {
+  ENROLLED
+  GRADUATED
+  TRANSFERRED
+  LEFT
+  SUSPENDED
+}
+
+enum AlertStatus {
+  OPEN
+  CLOSED
+}
+
+enum OutboxStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+// ============ 平台：组织与身份 ============
+
+model sys_dept {
+  id       String   @id @default(uuid())
+  name     String
+  deptType DeptType
+  parentId String?
+  path     String // 物化路径，如 /root/grade1/class3，用于「本年级/本班」子树判定
+  sort     Int      @default(0)
+  parent   sys_dept?  @relation("DeptTree", fields: [parentId], references: [id])
+  children sys_dept[] @relation("DeptTree")
+
+  users     user_dept[]
+  spaces    space[]
+  @@index([path])
+  @@index([deptType])
+}
+
+model sys_user {
+  id            String        @id @default(uuid())
+  username      String        @unique
+  passwordHash  String
+  realName      String
+  accountStatus AccountStatus @default(ACTIVE)
+  studentStatus StudentStatus?
+  studentId     String?
+  createdAt     DateTime      @default(now())
+
+  depts      user_dept[]
+  roles      user_role[]
+  headTeacher head_teacher[]
+  parentLinks student_parent[] @relation("ParentLinks")
+  studentLinks student_parent[] @relation("StudentLinks")
+}
+
+model user_dept {
+  userId String
+  deptId String
+  user   sys_user @relation(fields: [userId], references: [id])
+  dept   sys_dept @relation(fields: [deptId], references: [id])
+  @@id([userId, deptId])
+}
+
+/// 班主任身份：把「本年级」范围收窄到该 CLASS（docs/04 §1.3/§4.2-B）
+model head_teacher {
+  id          String   @id @default(uuid())
+  teacherId   String
+  classId     String
+  termId      String // 换届快照【E3】：按 classId + 学期 判定历史归属
+  teacher     sys_user @relation(fields: [teacherId], references: [id])
+  classNode   sys_dept @relation(fields: [classId], references: [id])
+  @@unique([teacherId, classId, termId])
+  @@index([teacherId, termId])
+}
+
+/// 关系型归属：家长-子女（docs/04 §1.5）
+model student_parent {
+  id           String   @id @default(uuid())
+  studentId    String
+  parentUserId String
+  student      sys_user @relation("StudentLinks", fields: [studentId], references: [id])
+  parent       sys_user @relation("ParentLinks", fields: [parentUserId], references: [id])
+  @@unique([studentId, parentUserId])
+  @@index([parentUserId])
+}
+
+model sys_role {
+  id          String     @id @default(uuid())
+  code        String     @unique // R-ADMIN ... R-DEAN ... R-CUSTOM-*
+  name        String
+  dataScope   DataScope? // 三级数据范围；为 null 即「数据范围不完整」→ 运行时按 SELF 兜底（AC-RBAC-2）
+  scopeComplete Boolean  @default(false) // RoleService 保存校验器写入
+  builtin     Boolean    @default(false) // 预置 R-* 不可删除（AC-RBAC-3）
+  createdAt   DateTime   @default(now())
+
+  users        user_role[]
+  menus        role_menu[]
+  buttons      role_button[]
+  objectScopes role_object_scope[]
+}
+
+model user_role {
+  userId String
+  roleId String
+  user   sys_user @relation(fields: [userId], references: [id])
+  role   sys_role @relation(fields: [roleId], references: [id])
+  @@id([userId, roleId])
+}
+
+model sys_menu {
+  id       String  @id @default(uuid())
+  code     String  @unique // M01 / M0505 / M15 ...
+  name     String
+  path     String?
+  parentId String?
+  sort     Int     @default(0)
+  /// 列表/详情/导出类菜单：数据范围不完整的角色不得被授予（AC-RBAC-2）
+  listLike Boolean @default(false)
+
+  roles   role_menu[]
+  buttons sys_button[]
+}
+
+model sys_button {
+  id       String @id @default(uuid())
+  code     String @unique // BTN-MAT-APPLY ...
+  name     String
+  menuId   String
+  menu     sys_menu @relation(fields: [menuId], references: [id])
+  roles    role_button[]
+}
+
+model role_menu {
+  roleId String
+  menuId String
+  role   sys_role @relation(fields: [roleId], references: [id])
+  menu   sys_menu @relation(fields: [menuId], references: [id])
+  @@id([roleId, menuId])
+}
+
+model role_button {
+  roleId   String
+  buttonId String
+  role     sys_role     @relation(fields: [roleId], references: [id])
+  button   sys_button   @relation(fields: [buttonId], references: [id])
+  @@id([roleId, buttonId])
+}
+
+/// 角色 × 数据对象 × 归属类型 × 范围：三张矩阵之外的「对象级」数据范围（docs/03 §四）
+model role_object_scope {
+  id           String        @id @default(uuid())
+  roleId       String
+  objectKey    String // procurement_project / asset / space / notice ...
+  ownership    OwnershipType
+  dataScope    DataScope
+  role         sys_role      @relation(fields: [roleId], references: [id])
+  @@unique([roleId, objectKey])
+}
+
+/// 统一数据字典（docs/03 M0505，10 个字典编码）
+model sys_dict {
+  id        String   @id @default(uuid())
+  dictCode  String // DICT-TERM / DICT-ASSET-TYPE ...
+  itemCode  String // MATERIAL / FIRST_TERM ...
+  itemName  String // 中文显示名
+  sort      Int      @default(0)
+  enabled   Boolean  @default(true)
+  isCurrent Boolean? // DICT-TERM 专用：当前学期标识
+  @@unique([dictCode, itemCode])
+  @@index([dictCode])
+}
+
+// ============ 平台：流程模板（docs/07） ============
+
+model flow_template {
+  id            String   @id @default(uuid())
+  code          String   @unique
+  name          String
+  businessType  String // procurement / material / repair / schedule_change ...
+  enabled       Boolean  @default(true)
+  version       Int      @default(1)
+  rejectPolicy  String   @default("RETURN") // RETURN 退回发起人 | TERMINATE 终止
+  nodes         flow_node[]
+  instances     flow_instance[]
+}
+
+model flow_node {
+  id           String   @id @default(uuid())
+  templateId   String
+  seq          Int
+  name         String
+  approveRole  String // 审批角色编码（可配置，不硬编码）
+  timeoutHours Int?
+  /// V2.0 扩展位：node_type（会签/或签/条件分支）—— 首版固定线性，字段预留不启用（docs/07 §五）
+  nodeType     String   @default("LINEAR")
+  template     flow_template @relation(fields: [templateId], references: [id])
+  @@unique([templateId, seq])
+}
+
+model flow_instance {
+  id            String   @id @default(uuid())
+  businessType  String
+  businessId    String
+  templateId    String
+  /// 创建时模板快照：进行中实例沿用快照，改模板不影响（AC-D3-3）
+  templateSnap  Json
+  currentSeq    Int      @default(1)
+  status        String // RUNNING / APPROVED / REJECTED / CANCELLED
+  createdAt     DateTime @default(now())
+  template      flow_template @relation(fields: [templateId], references: [id])
+  history       flow_task[]
+  @@index([businessType, businessId])
+}
+
+model flow_task {
+  id         String   @id @default(uuid())
+  instanceId String
+  seq        Int
+  approverId String?
+  role       String
+  conclusion String? // APPROVE / REJECT
+  comment    String?
+  actedAt    DateTime?
+  instance   flow_instance @relation(fields: [instanceId], references: [id])
+}
+
+// ============ 横切：统一场地 space（docs/04 §1.11） ============
+
+model space {
+  id         String      @id @default(uuid())
+  spaceName  String
+  spaceType  SpaceType
+  capacity   Int?
+  deptNodeId String? // 组织型归属载体
+  status     SpaceStatus @default(AVAILABLE)
+  /// 开放范围：该场地对本部门/本年级是否开放（docs/04 §3.11）
+  openScope  DataScope   @default(ALL)
+  deptNode   sys_dept?   @relation(fields: [deptNodeId], references: [id])
+  occupancies space_occupancy[]
+  @@index([spaceType])
+}
+
+model space_occupancy {
+  id         String          @id @default(uuid())
+  spaceId    String
+  termId     String // 学期（聚合与鉴权主口径）
+  week       Int
+  dayOfWeek  Int // 1=周一
+  period     Int // 节次
+  source     OccupancySource
+  bizRefId   String? // 课表/预约单引用
+  status     OccupancyStatus @default(EFFECTIVE)
+  createdBy  String?
+  createdAt  DateTime        @default(now())
+  space      space           @relation(fields: [spaceId], references: [id])
+
+  /// C9 ② 部分唯一索引：同一「场地+学期+周次+星期+节次」只允许一个有效占用（ADR §4.1）
+  ///
+  /// ⚠️ 本索引**故意不在 schema.prisma 中声明**。Prisma schema 无法表达 partial index
+  /// （无 WHERE 条件语法），若在此写 `@@unique([spaceId,termId,week,dayOfWeek,period])`，
+  /// 则 Prisma 认为"全表唯一"，下次 `prisma migrate dev` 会生成
+  /// `DROP INDEX uniq_effective_slot` + `CREATE UNIQUE INDEX`（无 WHERE）的迁移，
+  /// 把 C9 并发保护**静默干掉**（门禁4 审计阻断项）。
+  ///
+  /// 维护约定（三条，缺一不可）：
+  ///  1. 索引由 `migrations/20261030000000_init` 与 `20261030000002_*` 手写 SQL 创建，
+  ///     口径固定为 `WHERE status IN ('PENDING','EFFECTIVE')`；
+  ///  2. 禁止任何迁移出现 `DROP INDEX "uniq_effective_slot"` —— 由
+  ///     `npm run prisma:guard`（scripts/assert-no-partial-index-drop.mjs）在提交前拦截；
+  ///  3. 修改本模型后如 prisma 自动生成了删除该索引的迁移，**必须手工删除那段 SQL**再提交。
+  ///      （relation 见上方 `space` 字段，此处不再重复声明）
+
+  @@index([spaceId, termId, week])
+}
+
+// ============ 横切：统一资产台账 asset（docs/04 §1.6） ============
+
+model asset {
+  id           String      @id @default(uuid())
+  name         String
+  assetType    AssetType // 严格域隔离：assetType × 借用权限点（B5）
+  quantity     Int         @default(0)
+  availableQty Int         @default(0)
+  status       AssetStatus @default(IN_STOCK)
+  location     String?
+  /// 归属借用域：MATERIAL→logistics / LAB_EQUIP→science / SPORT_EQUIP→sport（跨域拒绝 40302）
+  borrowDomain String
+  @@index([assetType])
+}
+
+model asset_borrow {
+  id         String   @id @default(uuid())
+  assetId    String
+  borrowerId String
+  quantity   Int
+  termId     String?
+  dueAt      DateTime?
+  returnedAt DateTime?
+  /// C9 ① 幂等键：申请单号唯一，防重复扣减（ADR §4.1）
+  applyNo    String   @unique
+  asset      asset    @relation(fields: [assetId], references: [id])
+  @@index([borrowerId])
+}
+
+// ============ 横切：超期提醒 alert（C10，docs/04 §3.7） ============
+
+model alert {
+  id         String      @id @default(uuid())
+  /// LEAVE_NOT_RETURN / ASSET_OVERDUE / APPROVAL_STALL / DOC_STALL / PURCHASE_OVERDUE /
+  /// STOCK_SHORT / REPAIR_UNASSIGNED / REPAIR_UNHANDLED / PARENT_UNCONFIRMED
+  alertType  String
+  bizType    String
+  bizId      String
+  ownerId    String? // 责任人：可见范围随其数据范围继承
+  ownerDeptId String?
+  termId     String?
+  level      String      @default("WARNING") // WARNING / DANGER
+  status     AlertStatus @default(OPEN)
+  createdAt  DateTime    @default(now())
+  /// 唯一约束防重复生成（同类型同业务对象只留一条 OPEN）
+  @@unique([alertType, bizType, bizId])
+  @@index([ownerId, status])
+}
+
+// ============ 横切：消息中心 + 事件发件箱（docs/15，ADR-04） ============
+
+model event_outbox {
+  id          String       @id @default(uuid())
+  eventType   String
+  payload     Json
+  /// 幂等：同一业务事件只投递一次
+  dedupeKey   String       @unique
+  status      OutboxStatus @default(PENDING)
+  retryCount  Int          @default(0)
+  createdAt   DateTime     @default(now())
+  @@index([status])
+}
+
+model message {
+  id         String    @id @default(uuid())
+  receiverId String // SELF：仅接收人本人可见（AC-MS7-1）
+  category   String // APPROVAL / NOTICE / MEETING / ALERT / SYSTEM
+  title      String
+  bizType    String?
+  bizId      String?
+  linkTo     String?
+  /// 站内信自身已读（仅用于角标）；业务对象已读回执以业务端为唯一真源（AC-MS8-1）
+  read       Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  @@index([receiverId, read])
+}
+
+model message_template {
+  id          String @id @default(uuid())
+  /// 按业务类型独立建模板，禁止复用造成串味（REQ-MS4）
+  bizType     String
+  eventType   String
+  titleTpl    String
+  contentTpl  String
+  @@unique([bizType, eventType])
+}
+
+// ============ 横切：公告（角色授权型，docs/04 §1.7） ============
+
+model notice {
+  id             String   @id @default(uuid())
+  title          String
+  content        String
+  visibleRoles   String[] // 命中可见角色 + M1201 菜单权限 = 可见
+  publishedById  String
+  termId         String?
+  publishedAt    DateTime @default(now())
+  retracted      Boolean  @default(false)
+  @@index([termId])
+}
+
+/// 公告已读回执：业务端唯一真源（AC-MS8-1）
+model notice_receipt {
+  id       String   @id @default(uuid())
+  noticeId String
+  userId   String
+  readAt   DateTime @default(now())
+  @@unique([noticeId, userId])
+}
+
+// ============ 业务域：后勤（M02 采购 / M03 领用 / M04 报修） ============
+
+model procurement_project {
+  id             String   @id @default(uuid())
+  applyNo        String   @unique // 幂等键
+  name           String
+  creatorId      String // 归属人
+  creatorDeptId  String? // 归属部门
+  termId         String?
+  budget         Decimal? @db.Decimal(14, 2)
+  status         String // 取自 DICT-STATUS
+  createdAt      DateTime @default(now())
+  @@index([creatorId])
+  @@index([creatorDeptId])
+}
+
+model material_requisition {
+  id             String   @id @default(uuid())
+  applyNo        String   @unique
+  applicantId    String
+  applicantDeptId String?
+  assetId        String
+  quantity       Int
+  termId         String?
+  status         String
+  createdAt      DateTime @default(now())
+  @@index([applicantId])
+}
+
+model repair_ticket {
+  id             String   @id @default(uuid())
+  ticketNo       String   @unique
+  reporterId     String
+  reporterDeptId String?
+  spaceId        String?
+  faultType      String? // DICT-FAULT-TYPE
+  termId         String?
+  status         String
+  assignedTo     String?
+  createdAt      DateTime @default(now())
+  @@index([reporterId])
+}
+
+// ============ 业务域：教务（M06 排课 / M07 课表 / M08 调课） ============
+
+model schedule_version {
+  id         String   @id @default(uuid())
+  termId     String
+  effectiveWeek Int
+  version    Int // 乐观锁（AC-F4-3）
+  status     String // DRAFT / PUBLISHED
+  publishedAt DateTime?
+  @@unique([termId, effectiveWeek, version])
+}
+
+model timetable_entry {
+  id         String   @id @default(uuid())
+  versionId  String
+  spaceId    String?
+  teacherId  String
+  classId    String
+  subject    String
+  termId     String
+  week       Int
+  dayOfWeek  Int
+  period     Int
+  substituteTeacherId String? // 代课标注
+  @@index([termId, week])
+}
+
+model schedule_change {
+  id         String   @id @default(uuid())
+  applyNo    String   @unique
+  applicantId String
+  termId     String
+  targetSlot Json
+  reason     String?
+  status     String
+  createdAt  DateTime @default(now())
+  @@index([applicantId])
+}
+
+// ============ 业务域：德育（M09 请假 / M10 违纪 / M11 评优） ============
+
+model leave_request {
+  id            String   @id @default(uuid())
+  applyNo       String   @unique
+  studentId     String
+  studentClassId String? // 本班载体 + 换届快照（classId + 学期）
+  termId        String?
+  leaveType     String? // DICT-LEAVE-TYPE
+  status        String
+  returnAt      DateTime?
+  createdAt     DateTime @default(now())
+  @@index([studentId])
+  @@index([studentClassId])
+}
+
+model discipline_record {
+  id             String   @id @default(uuid())
+  studentId      String
+  studentClassId String?
+  termId         String?
+  discType       String? // DICT-DISC-TYPE
+  level          String? // DICT-DISC-LEVEL
+  /// 家长视角过滤【B4】：内部处理意见/谈话记录不下发家长
+  internalNote   String?
+  status         String
+  createdAt      DateTime @default(now())
+  @@index([studentClassId])
+}
+
+model award_nomination {
+  id         String   @id @default(uuid())
+  applyNo    String   @unique
+  studentId  String
+  studentClassId String?
+  termId     String?
+  quotaUsed  Boolean  @default(false)
+  status     String
+  createdAt  DateTime @default(now())
+}
+
+// ============ 业务域：党政办（M12） ============
+
+model party_document {
+  id         String   @id @default(uuid())
+  docNo      String   @unique
+  title      String
+  ownerId    String
+  termId     String?
+  status     String
+  createdAt  DateTime @default(now())
+  @@index([ownerId])
+}
+
+model meeting_room_booking {
+  id        String   @id @default(uuid())
+  bookingId String   @unique
+  spaceId   String
+  bookerId  String
+  termId    String
+  slot      Json
+  status    String
+  createdAt DateTime @default(now())
+  @@index([bookerId])
+}
+
+// ============ 业务域：科教（M13） ============
+
+model lab_booking {
+  id        String   @id @default(uuid())
+  bookingId String   @unique
+  spaceId   String
+  bookerId  String
+  termId    String
+  slot      Json
+  status    String
+  createdAt DateTime @default(now())
+}
+
+model competition {
+  id        String   @id @default(uuid())
+  name      String
+  quota     Int
+  usedQuota Int      @default(0) // C9 ① 原子扣减
+  termId    String?
+}
+
+model competition_apply {
+  id          String   @id @default(uuid())
+  applyNo     String   @unique
+  competitionId String
+  applicantId String
+  status      String
+  @@unique([competitionId, applicantId])
+}
+
+// ============ 业务域：体育（M14） ============
+
+model sport_event {
+  id       String   @id @default(uuid())
+  name     String
+  spaceId  String?
+  termId   String?
+  slot     Json?
+  quota    Int      @default(0)
+  usedQuota Int     @default(0)
+}
+
+model fitness_record {
+  id        String   @id @default(uuid())
+  studentId String
+  studentClassId String?
+  termId    String?
+  score     Json
+  @@index([studentClassId])
+}

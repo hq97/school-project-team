@@ -1,0 +1,153 @@
+/* ==========================================================================
+   中学校务数字化平台 · 设计 Token（唯一真源）
+   --------------------------------------------------------------------------
+   用法：在 vue-pure-admin 的 src/style/index.scss（或 main.ts）中引入一次：
+       import "@/design/tokens.css";
+   规则：业务代码只允许消费本文件的 CSS 变量，禁止硬编码色值 / 间距值。
+        需要 JS 侧取值的场景（ECharts option）请用 @/design/tokens.ts。
+   ========================================================================== */
+
+:root {
+  /* ---------- 1. 品牌主色 ---------- */
+  --sa-primary: #2b5ce6;
+  --sa-primary-hover: #1e48c7;
+  --sa-primary-active: #17399e;
+  --sa-primary-bg: #eef3ff; /* 主色浅底：选中行 / 主色标签 */
+  --sa-primary-border: #c7d7ff;
+
+  /* ---------- 2. 语义色（状态 / 涨跌 / 预警）---------- */
+  --sa-success: #1f9254;
+  --sa-success-bg: #e8f6ee;
+  --sa-warning: #b26a00;
+  --sa-warning-bg: #fff5e6;
+  --sa-danger: #c0362c;
+  --sa-danger-bg: #fdecea;
+  --sa-info: #4b5563;
+  --sa-info-bg: #f1f3f5;
+
+  /* 趋势（环比 / 同比箭头）——涨绿跌红在教育场景易误读，统一用中性升降色 */
+  --sa-trend-up: #1f9254;
+  --sa-trend-down: #c0362c;
+  --sa-trend-flat: #8a94a6;
+
+  /* ---------- 3. 中性色（文字 / 边框 / 背景）---------- */
+  --sa-text-1: #1b1f27; /* 标题 / 主数值 */
+  --sa-text-2: #4e5867; /* 正文 / 次级信息 */
+  --sa-text-3: #8a94a6; /* 占位符 / 辅助说明 */
+  --sa-text-inverse: #ffffff;
+  --sa-border-1: #e3e8ef; /* 卡片描边 / 表格线 */
+  --sa-border-2: #eef1f5; /* 区块内分隔线 */
+  --sa-bg-page: #f5f7fa; /* 页面底色 */
+  --sa-bg-card: #ffffff; /* 卡片 / 弹层 */
+  --sa-bg-hover: #f7f9fc; /* 行悬停 */
+  --sa-bg-disabled: #f5f6f8;
+  --sa-mask: rgba(27, 31, 39, 0.45);
+
+  /* ---------- 4. 图表色板（六域固定映射）---------- */
+  --sa-chart-academic: #2b5ce6; /* 教务 */
+  --sa-chart-moral: #7a5af8; /* 德育 */
+  --sa-chart-logistics: #00a38d; /* 后勤 */
+  --sa-chart-party: #f2a33c; /* 党政办 */
+  --sa-chart-science: #3e8ede; /* 科教 */
+  --sa-chart-sport: #e8544b; /* 体育 */
+  --sa-chart-axis: #d9dfe8; /* 坐标轴 / 网格线 */
+  --sa-chart-split: #eef1f5; /* 分割线 */
+
+  /* ---------- 5. 间距刻度（4px 基准，仅允许取值 0/4/8/12/16/20/24/32/40/48）---------- */
+  --sa-space-0: 0px;
+  --sa-space-1: 4px;
+  --sa-space-2: 8px;
+  --sa-space-3: 12px;
+  --sa-space-4: 16px;
+  --sa-space-5: 20px;
+  --sa-space-6: 24px;
+  --sa-space-8: 32px;
+  --sa-space-10: 40px;
+  --sa-space-12: 48px;
+
+  /* 场景化间距别名 */
+  --sa-gap-card: var(--sa-space-4); /* 卡片栅格间距：固定 16px */
+  --sa-pad-card: var(--sa-space-5); /* 卡片内边距：20px */
+  --sa-pad-page: var(--sa-space-6); /* 页面安全边距：24px */
+
+  /* ---------- 6. 圆角 ---------- */
+  --sa-radius-sm: 4px; /* 标签 / 按钮 */
+  --sa-radius-md: 6px; /* 输入框 / 卡片 */
+  --sa-radius-lg: 8px; /* 卡片 / 抽屉 */
+  --sa-radius-xl: 12px; /* 大屏 KPI 卡 */
+  --sa-radius-pill: 999px; /* 胶囊标签 */
+
+  /* ---------- 7. 阴影（克制，两级）---------- */
+  --sa-shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+  --sa-shadow-float: 0 4px 12px rgba(16, 24, 40, 0.1);
+
+  /* ---------- 8. 高度 / 尺寸 ---------- */
+  --sa-h-header: 56px; /* 顶部栏 */
+  --sa-h-btn: 32px; /* 常规按钮 */
+  --sa-h-btn-lg: 40px; /* 主行动按钮（教师端大按钮） */
+  --sa-h-input: 32px; /* 表单控件 */
+  --sa-h-kpi: 96px; /* 大屏 KPI 卡 */
+  --sa-h-chart-sm: 240px; /* 小图表卡 */
+  --sa-h-chart-md: 288px; /* 中图表卡 */
+
+  /* ---------- 9. 字体 ---------- */
+  --sa-font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Helvetica,
+    Arial, sans-serif;
+  --sa-font-num: "DIN Alternate", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --sa-fs-12: 12px; /* 辅助 / 角标 */
+  --sa-fs-13: 13px; /* 表格正文 */
+  --sa-fs-14: 14px; /* 正文 / 表单 */
+  --sa-fs-16: 16px; /* 区块标题 */
+  --sa-fs-20: 20px; /* 页面标题 */
+  --sa-fs-24: 24px; /* KPI 数值 */
+  --sa-fs-32: 32px; /* 大屏主 KPI 数值 */
+  --sa-lh-tight: 1.25;
+  --sa-lh-normal: 1.5;
+  --sa-fw-normal: 400;
+  --sa-fw-medium: 500;
+  --sa-fw-bold: 600;
+
+  /* ---------- 10. 动效（克制：只做必要的状态反馈，禁止装饰动效）---------- */
+  --sa-dur-fast: 120ms;
+  --sa-dur-base: 200ms;
+  --sa-ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ---------- 11. 层级 ---------- */
+  --sa-z-drawer: 2000;
+  --sa-z-dialog: 2100;
+  --sa-z-message: 3000;
+
+  /* ---------- 12. Element Plus 覆盖（保证组件与 token 同源）---------- */
+  --el-color-primary: var(--sa-primary);
+  --el-color-success: var(--sa-success);
+  --el-color-warning: var(--sa-warning);
+  --el-color-danger: var(--sa-danger);
+  --el-color-error: var(--sa-danger);
+  --el-color-info: var(--sa-info);
+  --el-text-color-primary: var(--sa-text-1);
+  --el-text-color-regular: var(--sa-text-2);
+  --el-text-color-secondary: var(--sa-text-3);
+  --el-border-color: var(--sa-border-1);
+  --el-border-color-light: var(--sa-border-2);
+  --el-fill-color-light: var(--sa-bg-hover);
+  --el-border-radius-base: var(--sa-radius-md);
+  --el-font-size-base: var(--sa-fs-14);
+}
+
+/* ---------- 13. 排版工具类（少量，够用即止）---------- */
+.sa-num {
+  font-family: var(--sa-font-num);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+.sa-card {
+  background: var(--sa-bg-card);
+  border: 1px solid var(--sa-border-1);
+  border-radius: var(--sa-radius-lg);
+  box-shadow: var(--sa-shadow-card);
+}
+.sa-page {
+  padding: var(--sa-pad-page);
+  background: var(--sa-bg-page);
+  min-height: 100%;
+}

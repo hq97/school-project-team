@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全量需求总览与业务流程图 · 中学校务数字化平台</title>
+<style>
+  :root {
+    --bg: #f5f7fa; --card: #ffffff; --text: #1f2329; --sub: #646a73; --border: #e5e6eb;
+    --blue: #2f54eb; --blue-bg: #eef1ff;
+    --green: #00b96b; --green-bg: #e8f8f0;
+    --orange: #fa8c16; --orange-bg: #fff4e8;
+    --purple: #722ed1; --purple-bg: #f5f0ff;
+    --gray: #8a9099; --gray-bg: #f0f1f5;
+    --red: #f5222d; --red-bg: #fff1f0;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); line-height:1.6; padding:32px 20px 60px; }
+  .wrap { max-width:1080px; margin:0 auto; }
+  header { text-align:center; padding:30px 24px; background:linear-gradient(135deg,#2f54eb,#4c6ef5); color:#fff; border-radius:16px; margin-bottom:24px; }
+  header h1 { font-size:26px; font-weight:700; letter-spacing:1px; }
+  header p { font-size:14px; opacity:.92; margin-top:8px; }
+  .stats { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:24px; }
+  .stat { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px; text-align:center; }
+  .stat .num { font-size:24px; font-weight:700; color:var(--blue); }
+  .stat .label { font-size:12px; color:var(--sub); margin-top:2px; }
+  h2.sec { font-size:18px; font-weight:700; margin:32px 0 14px; padding-left:12px; border-left:4px solid var(--blue); }
+  .engine { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; margin-bottom:8px; }
+  .engine .flow-title { font-size:14px; font-weight:600; color:var(--text); margin-bottom:14px; }
+  .flow { display:flex; align-items:center; flex-wrap:wrap; gap:0; row-gap:10px; }
+  .node { padding:8px 14px; border-radius:8px; font-size:13px; font-weight:500; border:1px solid transparent; white-space:nowrap; }
+  .arrow { margin:0 8px; color:var(--gray); font-size:15px; }
+  .n-start { background:var(--blue-bg); color:#1d39c4; border-color:#adc6ff; }
+  .n-approve { background:var(--orange-bg); color:#ad4e00; border-color:#ffd591; }
+  .n-exec { background:var(--green-bg); color:#135200; border-color:#b7eb8f; }
+  .n-special { background:var(--purple-bg); color:#531dab; border-color:#d3adf7; }
+  .n-end { background:var(--gray-bg); color:#595959; border-color:#d9d9d9; }
+  .n-reject { background:var(--red-bg); color:#a8071a; border-color:#ffa39e; }
+  .domain { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; margin-bottom:20px; }
+  .domain-head { display:flex; align-items:center; gap:12px; margin-bottom:4px; }
+  .domain-head .tag { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:17px; color:#fff; }
+  .domain-head h3 { font-size:17px; font-weight:700; }
+  .domain-sub { font-size:12.5px; color:var(--sub); margin-bottom:18px; }
+  .flow-block { margin-bottom:18px; }
+  .flow-block:last-child { margin-bottom:0; }
+  .flow-block .ft { font-size:13px; font-weight:600; color:var(--sub); margin-bottom:8px; }
+  .legend { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+  .legend span { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--sub); }
+  .legend .dot { width:12px; height:12px; border-radius:3px; display:inline-block; }
+  .note { background:#fffbe6; border:1px solid #ffe58f; border-radius:10px; padding:14px 16px; font-size:13px; color:#ad6800; margin-top:20px; }
+  .c-blue .tag{background:var(--blue);} .c-green .tag{background:var(--green);} .c-orange .tag{background:var(--orange);}
+  .c-purple .tag{background:var(--purple);} .c-teal .tag{background:#13c2c2;} .c-pink .tag{background:#eb2f96;}
+  @media(max-width:760px){ .stats{grid-template-columns:repeat(3,1fr);} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>全量需求总览与业务流程图</h1>
+    <p>中学校务数字化平台 · 六大业务域 · 需求阶段（门禁 1）已收口</p>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="num">6</div><div class="label">业务域</div></div>
+    <div class="stat"><div class="num">80+</div><div class="label">需求条目</div></div>
+    <div class="stat"><div class="num">3</div><div class="label">权限归属类型</div></div>
+    <div class="stat"><div class="num">12</div><div class="label">系统角色（预置基线·可扩展）</div></div>
+    <div class="stat"><div class="num">15</div><div class="label">一级菜单</div></div>
+    <div class="stat"><div class="num">1</div><div class="label">审批流引擎</div></div>
+  </div>
+
+  <h2 class="sec">通用业务引擎（六域共用底座）</h2>
+  <div class="engine">
+    <div class="flow-title">可配置审批流引擎（REQ-D3）：所有审批类业务统一走此流程，审批人与级数由流程模板配置</div>
+    <div class="flow">
+      <span class="node n-start">提交申请</span><span class="arrow">→</span>
+      <span class="node n-approve">审批节点 1</span><span class="arrow">→</span>
+      <span class="node n-approve">审批节点 N（可配置）</span><span class="arrow">→</span>
+      <span class="node n-exec">执行 / 完成</span>
+    </div>
+    <div class="flow" style="margin-top:10px;">
+      <span class="node n-reject">任一级驳回</span><span class="arrow">→</span>
+      <span class="node n-special">退回发起人（可重新提交）</span>
+    </div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--blue-bg);border:1px solid #adc6ff"></i>发起/录入</span>
+      <span><i class="dot" style="background:var(--orange-bg);border:1px solid #ffd591"></i>审批</span>
+      <span><i class="dot" style="background:var(--green-bg);border:1px solid #b7eb8f"></i>执行/完成</span>
+      <span><i class="dot" style="background:var(--purple-bg);border:1px solid #d3adf7"></i>特殊环节</span>
+      <span><i class="dot" style="background:var(--gray-bg);border:1px solid #d9d9d9"></i>归档/结束</span>
+      <span><i class="dot" style="background:var(--red-bg);border:1px solid #ffa39e"></i>驳回</span>
+    </div>
+  </div>
+
+  <h2 class="sec">跨域统一机制 · 场地占用 / 时间口径 / 超期提醒（六域共用底座）</h2>
+  <div class="engine">
+    <div class="flow-title">统一场地对象 <b>space</b> 与占用冲突（docs/04 §1.11 / §1.12）：<b>课表是场地占用的权威来源</b>，预约做单向校验</div>
+    <div class="flow">
+      <span class="node n-start">预约请求（会议室 / 实验室 / 赛事场地）</span><span class="arrow">→</span>
+      <span class="node n-special">① 先读课表占用做冲突校验</span><span class="arrow">→</span>
+      <span class="node n-reject">命中 → 拒绝 <b>40901</b>（场地已被课表占用，不进入并发判定）</span>
+    </div>
+    <div class="flow" style="margin-top:10px;">
+      <span class="node n-special">未命中 → 写入预约占用</span><span class="arrow">→</span>
+      <span class="node n-approve">② 并发竞争同一格（各域 C9 原子校验）</span><span class="arrow">→</span>
+      <span class="node n-reject">竞争失败 → <b>40902</b></span><span class="arrow">→</span>
+      <span class="node n-exec">成功 → 占用生效</span>
+    </div>
+    <div class="flow" style="margin-top:10px;">
+      <span class="node n-exec">排课发布 / 调课·代课生效</span><span class="arrow">→</span>
+      <span class="node n-special">写入 / 更新 space 占用记录（权威源）</span><span class="arrow">→</span>
+      <span class="node n-approve">覆盖已生效预约时：比对受影响预约 + 消息中心通知（不推送视为不通过）</span>
+    </div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--red-bg);border:1px solid #ffa39e"></i><b>40901</b> 与「已排定的课表」冲突（排课优先）</span>
+      <span><i class="dot" style="background:var(--orange-bg);border:1px solid #ffd591"></i><b>40902</b> 与「其它预约请求」抢同一格（并发竞争失败）</span>
+      <span><i class="dot" style="background:var(--purple-bg);border:1px solid #d3adf7"></i>单向校验：<b>预约不反向阻断排课</b>，双向互斥 / 预约优先列 V2.0</span>
+    </div>
+  </div>
+
+  <div class="domain">
+    <div class="flow-title" style="font-size:14px;font-weight:600;margin-bottom:14px;">统一时间口径（docs/04 §1.8）：学期 + 周次为唯一聚合与鉴权口径</div>
+    <div class="flow">
+      <span class="node n-start">六域业务数据</span><span class="arrow">→</span>
+      <span class="node n-special">归属维度：学期 + 周次（默认）</span><span class="arrow">→</span>
+      <span class="node n-approve">服务端聚合 + 数据权限鉴权</span><span class="arrow">→</span>
+      <span class="node n-exec">趋势图 / 报表「学期 / 自然月」维度切换器</span>
+    </div>
+    <div class="legend" style="margin-top:12px;">
+      <span><i class="dot" style="background:var(--orange-bg);border:1px solid #ffd591"></i>自然月<b>仅为展示维度</b>：不改变数据归属、聚合结果与越权判定</span>
+      <span><i class="dot" style="background:var(--green-bg);border:1px solid #b7eb8f"></i>大屏 / 报表 / 趋势图统一提供切换器（docs/01 REQ-A5、docs/14 AC-DD1-2）</span>
+    </div>
+  </div>
+
+  <div class="domain">
+    <div class="flow-title" style="font-size:14px;font-weight:600;margin-bottom:14px;">超期提醒统一数据对象（docs/04 §3.7【C10】）</div>
+    <div class="flow">
+      <span class="node n-special">请假到期未销假</span>
+      <span class="node n-special">资产超期未归还</span>
+      <span class="node n-special">审批滞留 / 公文滞留</span>
+      <span class="node n-special">超期未到货 / 库存不足</span>
+      <span class="node n-special">家长未确认超期（严重处分催办）</span>
+    </div>
+    <div class="flow" style="margin-top:10px;">
+      <span class="node n-special">报修提交后超时未派单</span>
+      <span class="node n-special">报修派单后超时未处理</span>
+      <span class="arrow">→</span>
+      <span class="node n-exec">统一走消息中心（docs/15）触达 + 进入异常清单 / 数据大屏预警</span>
+    </div>
+  </div>
+
+  <h2 class="sec">权限体系 · 部门 / 角色 / 菜单 / 数据权限</h2>
+  <div class="engine">
+    <div class="flow-title">权限鉴权链路（服务端逐接口校验，非前端隐藏按钮）</div>
+    <div class="flow">
+      <span class="node n-start">用户请求</span><span class="arrow">→</span>
+      <span class="node n-approve">功能权限（菜单/按钮）</span><span class="arrow">→</span>
+      <span class="node n-special">数据权限（范围过滤）</span><span class="arrow">→</span>
+      <span class="node n-exec">返回数据 / 越权拦截 403</span>
+    </div>
+  </div>
+
+  <div class="domain" style="margin-top:20px;">
+    <div class="flow-title" style="font-size:14px;font-weight:600;margin-bottom:14px;">部门树（组织架构，deptType 四种类型）</div>
+    <div style="font-size:13px;">
+      <div style="padding:8px 14px;border:1px solid #adc6ff;border-radius:8px;background:#eef1ff;display:inline-block;font-weight:500;">学校（SCHOOL）</div>
+      <div style="margin-left:22px;border-left:2px solid #d9d9d9;padding-left:16px;margin-top:8px;">
+        <div style="margin-bottom:8px;">
+          <div style="padding:6px 12px;border:1px solid #b7eb8f;border-radius:8px;background:#e8f8f0;display:inline-block;font-weight:500;">处室（OFFICE）→ 行政角色</div>
+          <div style="margin-left:20px;border-left:2px solid #e5e6eb;padding-left:14px;margin-top:6px;color:#595959;">
+            <div style="margin:3px 0;">教务处 → R-DEAN（全校，教务域执行主责）</div>
+            <div style="margin:3px 0;">后勤处 → R-LOGISTICS（全校）</div>
+            <div style="margin:3px 0;">德育处 → R-MORAL（全校）</div>
+            <div style="margin:3px 0;">党政办 → R-PARTY（全校）</div>
+          </div>
+        </div>
+        <div>
+          <div style="padding:6px 12px;border:1px solid #b7eb8f;border-radius:8px;background:#e8f8f0;display:inline-block;font-weight:500;">年级（GRADE）→ 教学角色</div>
+          <div style="margin-left:20px;border-left:2px solid #e5e6eb;padding-left:14px;margin-top:6px;color:#595959;">
+            <div style="margin:3px 0;">班级（CLASS）→ 学生挂靠 + 班主任 head_teacher.classId（本班）</div>
+            <div style="margin:3px 0;">教研组（SUBJECT）→ 教研组长 R-SUBJECT（本组）</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="domain">
+    <div class="flow-title" style="font-size:14px;font-weight:600;margin-bottom:14px;">角色权限绑定（用户 → 角色 → 两级授权）</div>
+    <div class="flow">
+      <span class="node n-start">用户（属部门节点）</span><span class="arrow">→</span>
+      <span class="node n-start">角色（多角色取并集）</span>
+    </div>
+    <div class="flow" style="margin-top:10px;">
+      <span class="node n-approve">角色 → 菜单/按钮（RBAC，vue-pure-admin）</span>
+      <span class="node n-special">角色 → 数据范围（SELF / GRADE / ALL，自建）</span>
+    </div>
+    <div class="flow" style="margin-top:14px;">
+      <span class="node n-start">菜单 M01–M15（含 M0505 数据字典 / M0507 流程模板 / M06–M08 教务域）+ 按钮 BTN-*</span><span class="arrow">=</span>
+      <span class="node n-exec">功能权限（能不能进 / 能不能点）</span>
+    </div>
+    <div class="flow" style="margin-top:10px;">
+      <span class="node n-start">数据范围 + 归属类型</span><span class="arrow">=</span>
+      <span class="node n-exec">数据权限（能看哪些记录）</span>
+    </div>
+  </div>
+
+  <div class="domain">
+    <div class="flow-title" style="font-size:14px;font-weight:600;margin-bottom:14px;">角色可扩展性规范（docs/03 §2.1）：<b>12 个预置角色是基线不是上限</b>（本轮新增 <b>R-DEAN 教务主任</b>）</div>
+    <div class="flow">
+      <span class="node n-start">M0502 新建角色</span><span class="arrow">=</span>
+      <span class="node n-approve">① 菜单授权</span><span class="arrow">+</span>
+      <span class="node n-approve">② 按钮授权</span><span class="arrow">+</span>
+      <span class="node n-special">③ 三级数据范围 SELF / GRADE / ALL + 归属类型</span><span class="arrow">=</span>
+      <span class="node n-exec">三项齐全，角色生效</span>
+    </div>
+    <div class="flow" style="margin-top:10px;">
+      <span class="node n-reject">数据范围未配置完整</span><span class="arrow">→</span>
+      <span class="node n-approve">禁止授予「列表 / 详情 / 导出」类菜单（保存校验拒绝）</span><span class="arrow">→</span>
+      <span class="node n-exec">接口兜底：按最小权限（本人 SELF）返回 + 打告警日志</span>
+    </div>
+    <div class="legend" style="margin-top:12px;">
+      <span><i class="dot" style="background:var(--blue-bg);border:1px solid #adc6ff"></i>预置 <b>R-*</b> 编码不可删除，可改名 / 调授权</span>
+      <span><i class="dot" style="background:var(--purple-bg);border:1px solid #d3adf7"></i>自建角色建议 <b>R-CUSTOM-*</b> 前缀</span>
+      <span><i class="dot" style="background:var(--green-bg);border:1px solid #b7eb8f"></i>新增角色<b>不新增第四级</b>数据范围（仍 SELF / GRADE / ALL）</span>
+    </div>
+  </div>
+
+  <div class="domain">
+    <div class="flow-title" style="font-size:14px;font-weight:600;margin-bottom:14px;">数据权限三种归属类型（服务端判定）</div>
+    <div class="flow">
+      <span class="node n-special">组织型 · 本人/本年级/全校 + 本班载体</span>
+      <span class="node n-special">关系型 · 家长—子女（student_parent）</span>
+      <span class="node n-special">角色授权型 · 公告可见角色集合</span>
+    </div>
+    <div class="legend" style="margin-top:12px;">
+      <span><i class="dot" style="background:var(--blue-bg);border:1px solid #adc6ff"></i>用户/角色</span>
+      <span><i class="dot" style="background:var(--orange-bg);border:1px solid #ffd591"></i>功能权限（菜单/按钮）</span>
+      <span><i class="dot" style="background:var(--purple-bg);border:1px solid #d3adf7"></i>数据权限（范围过滤）</span>
+      <span><i class="dot" style="background:var(--green-bg);border:1px solid #b7eb8f"></i>判定结果/部门载体</span>
+    </div>
+  </div>
+
+  <h2 class="sec">六域业务流程图</h2>
+
+  <div class="domain c-orange">
+    <div class="domain-head"><div class="tag">后</div><h3>后勤域 · 采购看板 / 物资领用 / 报修</h3></div>
+    <div class="domain-sub">校长看汇总趋势异常 · 后勤管台账流程 · 教师少跑腿少填表</div>
+    <div class="flow-block">
+      <div class="ft">采购全流程</div>
+      <div class="flow"><span class="node n-start">采购申请</span><span class="arrow">→</span><span class="node n-approve">审批</span><span class="arrow">→</span><span class="node n-exec">采购执行</span><span class="arrow">→</span><span class="node n-exec">入库（asset）</span><span class="arrow">→</span><span class="node n-end">看板追踪</span></div>
+    </div>
+    <div class="flow-block">
+      <div class="ft">物资领用</div>
+      <div class="flow"><span class="node n-start">领用申请</span><span class="arrow">→</span><span class="node n-approve">审批</span><span class="arrow">→</span><span class="node n-exec">出库（库存扣减）</span></div>
+    </div>
+    <div class="flow-block">
+      <div class="ft">报修</div>
+      <div class="flow"><span class="node n-start">报修申请</span><span class="arrow">→</span><span class="node n-approve">分派</span><span class="arrow">→</span><span class="node n-exec">处理</span><span class="arrow">→</span><span class="node n-end">完成验收</span></div>
+      <div class="flow" style="margin-top:8px;"><span class="node n-reject">超时未派单 / 派单后超时未处理</span><span class="arrow">→</span><span class="node n-special">超期提醒（docs/04 §3.7【C10】）</span><span class="arrow">→</span><span class="node n-exec">消息中心推送 + 校长异常清单 / 大屏预警</span></div>
+    </div>
+  </div>
+
+  <div class="domain c-blue">
+    <div class="domain-head"><div class="tag">教</div><h3>教务域 · 排课 / 查看课表 / 调课代课</h3></div>
+    <div class="domain-sub">执行主责 <b>R-DEAN 教务主任</b>（全校，排课编排 / 课表发布 / 调课代课审批 / 教学运行统计）· <b>R-VP</b> 分管教学副校长审批重大变更 · 自动排课 + 手动微调兜底</div>
+    <div class="flow-block">
+      <div class="ft">排课</div>
+      <div class="flow"><span class="node n-start">基础数据维护（场地取自统一 space）</span><span class="arrow">→</span><span class="node n-exec">自动排课（硬/软约束）</span><span class="arrow">→</span><span class="node n-special">手动微调</span><span class="arrow">→</span><span class="node n-approve">校验</span><span class="arrow">→</span><span class="node n-exec">发布课表（版本号乐观锁，防并发回退）</span><span class="arrow">→</span><span class="node n-special">写入 space 占用（权威源）</span></div>
+    </div>
+    <div class="flow-block">
+      <div class="ft">调课 / 代课 / 请假代课</div>
+      <div class="flow"><span class="node n-start">调课/代课申请</span><span class="arrow">→</span><span class="node n-approve">审批（流程模板配置：R-DEAN / 本年级 R-GRADE，重大变更可配 R-VP）</span><span class="arrow">→</span><span class="node n-special">写回前二次校验目标时段无冲突</span><span class="arrow">→</span><span class="node n-exec">课表自动更新 + space 占用更新</span><span class="arrow">→</span><span class="node n-end">通知相关教师 + 受影响预约人</span></div>
+    </div>
+  </div>
+
+  <div class="domain c-purple">
+    <div class="domain-head"><div class="tag">德</div><h3>德育域 · 请假 / 违纪 / 评优</h3></div>
+    <div class="domain-sub">首个引入学生、家长角色 · 家长确认作为审批前置</div>
+    <div class="flow-block">
+      <div class="ft">学生请假</div>
+      <div class="flow"><span class="node n-start">请假申请</span><span class="arrow">→</span><span class="node n-special">家长确认</span><span class="arrow">→</span><span class="node n-approve">审批</span><span class="arrow">→</span><span class="node n-exec">销假</span></div>
+    </div>
+    <div class="flow-block">
+      <div class="ft">违纪登记与处理</div>
+      <div class="flow"><span class="node n-start">违纪登记</span><span class="arrow">→</span><span class="node n-approve">逐级处理（谈话→处分）</span><span class="arrow">→</span><span class="node n-end">结果追踪留痕</span></div>
+    </div>
+    <div class="flow-block">
+      <div class="ft">评优评先</div>
+      <div class="flow"><span class="node n-start">标准维护</span><span class="arrow">→</span><span class="node n-start">班级推优</span><span class="arrow">→</span><span class="node n-approve">审批</span><span class="arrow">→</span><span class="node n-special">公示</span><span class="arrow">→</span><span class="node n-end">归档</span></div>
+    </div>
+  </div>
+
+  <div class="domain c-teal">
+    <div class="domain-head"><div class="tag">党</div><h3>党政办公室 · 公告 / 公文 / 会议 / 值班 / 用印</h3></div>
+    <div class="domain-sub">公告走角色授权 · 公文全程留痕</div>
+    <div class="flow-block">
+      <div class="ft">公文流转</div>
+      <div class="flow"><span class="node n-start">收文登记</span><span class="arrow">→</span><span class="node n-approve">拟办</span><span class="arrow">→</span><span class="node n-approve">批示</span><span class="arrow">→</span><span class="node n-exec">传阅</span><span class="arrow">→</span><span class="node n-end">归档</span></div>
+    </div>
+    <div class="flow-block">
+      <div class="ft">会议室预约 / 换班 / 用印</div>
+      <div class="flow"><span class="node n-start">会议室预约</span><span class="arrow">→</span><span class="node n-special">课表占用校验（命中 40901）</span><span class="arrow">→</span><span class="node n-approve">时段并发原子锁定（40902）</span><span class="arrow">→</span><span class="node n-approve">审批</span><span class="arrow">→</span><span class="node n-exec">执行</span></div>
+      <div class="flow" style="margin-top:8px;"><span class="node n-start">换班 / 用印申请</span><span class="arrow">→</span><span class="node n-approve">审批</span><span class="arrow">→</span><span class="node n-exec">执行</span></div>
+    </div>
+  </div>
+
+  <div class="domain c-green">
+    <div class="domain-head"><div class="tag">科</div><h3>科学教育 · 资源 / 实验预约 / 竞赛 / 课题</h3></div>
+    <div class="domain-sub">复用现有角色不新增 · 实验器材纳入统一资产台账</div>
+    <div class="flow-block">
+      <div class="ft">课题管理</div>
+      <div class="flow"><span class="node n-start">课题申报</span><span class="arrow">→</span><span class="node n-approve">立项审批</span><span class="arrow">→</span><span class="node n-exec">过程材料</span><span class="arrow">→</span><span class="node n-approve">结题审批</span><span class="arrow">→</span><span class="node n-end">归档</span></div>
+    </div>
+    <div class="flow-block">
+      <div class="ft">实验预约</div>
+      <div class="flow"><span class="node n-start">实验预约</span><span class="arrow">→</span><span class="node n-special">课表占用校验（命中 40901）</span><span class="arrow">→</span><span class="node n-approve">时段 / 器材库存并发原子锁定（40902）</span><span class="arrow">→</span><span class="node n-approve">审批</span><span class="arrow">→</span><span class="node n-exec">锁定时段使用</span></div>
+    </div>
+    <div class="flow-block">
+      <div class="ft">竞赛</div>
+      <div class="flow"><span class="node n-start">竞赛发布</span><span class="arrow">→</span><span class="node n-start">报名</span><span class="arrow">→</span><span class="node n-approve">评审</span><span class="arrow">→</span><span class="node n-special">公示</span></div>
+    </div>
+  </div>
+
+  <div class="domain c-pink">
+    <div class="domain-head"><div class="tag">体</div><h3>体育 · 体测 / 赛事 / 器材 / 训练队</h3></div>
+    <div class="domain-sub">体测标准国标+字典 · 器材纳入统一资产台账</div>
+    <div class="flow-block">
+      <div class="ft">体测数据</div>
+      <div class="flow"><span class="node n-start">体测成绩录入</span><span class="arrow">→</span><span class="node n-exec">达标统计</span><span class="arrow">→</span><span class="node n-end">年级班级对比</span></div>
+    </div>
+    <div class="flow-block">
+      <div class="ft">赛事</div>
+      <div class="flow"><span class="node n-start">赛事报名</span><span class="arrow">→</span><span class="node n-exec">赛程编排</span><span class="arrow">→</span><span class="node n-special">课表占用校验（命中 40901）+ 并发原子锁定（40902）</span><span class="arrow">→</span><span class="node n-special">成绩公示</span></div>
+    </div>
+    <div class="flow-block">
+      <div class="ft">器材借用</div>
+      <div class="flow"><span class="node n-start">器材借用</span><span class="arrow">→</span><span class="node n-approve">审批</span><span class="arrow">→</span><span class="node n-exec">归还（库存回补）</span></div>
+    </div>
+  </div>
+
+  <h2 class="sec">本轮新增验收标准（AC 增量）</h2>
+  <div class="domain">
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead>
+        <tr style="background:var(--blue-bg);text-align:left;">
+          <th style="padding:8px 10px;border:1px solid var(--border);width:130px;">AC 编号</th>
+          <th style="padding:8px 10px;border:1px solid var(--border);width:88px;">域</th>
+          <th style="padding:8px 10px;border:1px solid var(--border);">验收要点</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding:8px 10px;border:1px solid var(--border);">AC-F4-2</td><td style="padding:8px 10px;border:1px solid var(--border);">教务</td><td style="padding:8px 10px;border:1px solid var(--border);">课表发布 / 调课生效时，服务端把「场地 + 时段」写入<b>统一场地对象 space 占用记录</b>（docs/04 §1.11），作为预约类校验基准</td></tr>
+        <tr><td style="padding:8px 10px;border:1px solid var(--border);">AC-F4-3</td><td style="padding:8px 10px;border:1px solid var(--border);">教务</td><td style="padding:8px 10px;border:1px solid var(--border);">并发发布同一「学期 + 生效周」课表走<b>版本号乐观锁</b>——落后版本一律拒绝发布并提示刷新，防课表回退</td></tr>
+        <tr><td style="padding:8px 10px;border:1px solid var(--border);">AC-F4-4</td><td style="padding:8px 10px;border:1px solid var(--border);">教务</td><td style="padding:8px 10px;border:1px solid var(--border);">课表变更覆盖已生效预约时，服务端<b>比对受影响预约并推送消息中心通知</b>，未推送视为不通过</td></tr>
+        <tr><td style="padding:8px 10px;border:1px solid var(--border);">AC-L6-3</td><td style="padding:8px 10px;border:1px solid var(--border);">党政办</td><td style="padding:8px 10px;border:1px solid var(--border);">会议室预约提交先过<b>课表占用校验</b>，命中返 <b>40901</b>（区别于 AC-L6-2 并发抢同格）</td></tr>
+        <tr><td style="padding:8px 10px;border:1px solid var(--border);">AC-M4-3</td><td style="padding:8px 10px;border:1px solid var(--border);">科教</td><td style="padding:8px 10px;border:1px solid var(--border);">实验预约提交先过<b>课表占用校验</b>，命中返 <b>40901</b>（区别于 AC-M4-2 时段 / 库存并发）</td></tr>
+        <tr><td style="padding:8px 10px;border:1px solid var(--border);">AC-N5-2</td><td style="padding:8px 10px;border:1px solid var(--border);">体育</td><td style="padding:8px 10px;border:1px solid var(--border);">赛事排期占「场地 + 时段」<b>并发不超订</b>，仅一人成功（时段原子锁定）</td></tr>
+        <tr><td style="padding:8px 10px;border:1px solid var(--border);">AC-N5-3</td><td style="padding:8px 10px;border:1px solid var(--border);">体育</td><td style="padding:8px 10px;border:1px solid var(--border);">赛程编排提交先过<b>课表占用校验</b>，命中返 <b>40901</b>（区别于 AC-N5-2 并发）</td></tr>
+        <tr><td style="padding:8px 10px;border:1px solid var(--border);">AC-DD1-2</td><td style="padding:8px 10px;border:1px solid var(--border);">数据大屏</td><td style="padding:8px 10px;border:1px solid var(--border);">趋势图 / 图表区提供「<b>学期 / 自然月</b>」维度切换器，切换<b>不改变</b>聚合结果、可见范围与越权判定</td></tr>
+        <tr><td style="padding:8px 10px;border:1px solid var(--border);">AC-DD2-2</td><td style="padding:8px 10px;border:1px solid var(--border);">数据大屏</td><td style="padding:8px 10px;border:1px solid var(--border);">处室打开本角色大屏、教师打开个人工作台 <b>≤2 步</b>　✅硬指标②</td></tr>
+        <tr><td style="padding:8px 10px;border:1px solid var(--border);">AC-RBAC-1~4</td><td style="padding:8px 10px;border:1px solid var(--border);">RBAC</td><td style="padding:8px 10px;border:1px solid var(--border);">新增角色须<b>菜单 / 按钮 / 三级数据范围三项齐全</b>；数据范围不全者按<b>最小权限（SELF）</b>返回并打告警日志；预置 <b>R-*</b> 不可删除；不新增第四级</td></tr>
+        <tr><td style="padding:8px 10px;border:1px solid var(--border);">AC-MS5-1（挂标）</td><td style="padding:8px 10px;border:1px solid var(--border);">消息中心</td><td style="padding:8px 10px;border:1px solid var(--border);">六域业务事件统一触达，校长 / 处室不离开系统即知　✅硬指标①</td></tr>
+        <tr><td style="padding:8px 10px;border:1px solid var(--border);">AC-DD2-1 / AC-DD5-1（挂标）</td><td style="padding:8px 10px;border:1px solid var(--border);">数据大屏</td><td style="padding:8px 10px;border:1px solid var(--border);">校长一次看到六域 KPI + 异常预警；数据随权限过滤、越权数据不出现（服务端聚合）　✅硬指标①</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <b>五条贯穿全平台的主线：</b>
+    ① 审批统一走「流程模板配置的审批角色」（不写死岗位，可配 1~N 级）；
+    ② 数据权限按三种归属类型服务端逐接口校验——组织型（本人/本年级/全校+本班载体）、关系型（家长-子女）、角色授权型（公告）；
+    ③ 后勤物资 / 科教实验器材 / 体育器材合并为统一「<b>资产台账 asset</b>」，借还 / 库存模型一致，业务场景各自独立；
+    ④ 教室 / 实验室 / 会议室 / 运动场地合并为统一「<b>场地对象 space</b>」——<b>课表是场地占用的权威来源</b>，预约提交先过课表占用校验（<b>40901</b>），再并发竞争同一格（<b>40902</b>）；<b>预约不反向阻断排课</b>，双向互斥列 V2.0；
+    ⑤ <b>统一时间口径</b>：统计与鉴权一律走「学期 + 周次」，趋势图 / 报表提供「学期 / 自然月」切换器，<b>自然月仅为展示维度</b>，不改变数据归属与越权判定（docs/04 §1.8）。
+  </div>
+
+  <div style="text-align:center;color:var(--sub);font-size:12px;margin-top:16px;">
+    本总览整合自 docs/01/03/04/06/07/08/09/10/11/14/15（需求阶段已收口）<br>
+    本轮已同步：统一场地对象 space 与 40901 / 40902 冲突流程 · 排课为权威源的单向校验 · M0505 数据字典 / M0507 流程模板 / M06–M08 教务域菜单 · R-DEAN 教务主任（第 12 个预置角色）· 角色可扩展性规范 · 「学期 / 自然月」维度切换器 · 报修类超期提醒
+  </div>
+</div>
+</body>
+</html>

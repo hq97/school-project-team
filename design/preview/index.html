@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>中学校务平台 · UI 设计验证原型（门禁3）</title>
+<style>
+/* ============ 设计 Token（与 design/src/design/tokens.css 同源） ============ */
+:root{
+  --sa-primary:#2b5ce6; --sa-primary-hover:#1e48c7; --sa-primary-bg:#eef3ff; --sa-primary-border:#c7d7ff;
+  --sa-success:#1f9254; --sa-success-bg:#e8f6ee;
+  --sa-warning:#b26a00; --sa-warning-bg:#fff5e6;
+  --sa-danger:#c0362c;  --sa-danger-bg:#fdecea;
+  --sa-info:#4b5563;
+  --sa-trend-up:#1f9254; --sa-trend-down:#c0362c; --sa-trend-flat:#8a94a6;
+  --sa-text-1:#1b1f27; --sa-text-2:#4e5867; --sa-text-3:#8a94a6;
+  --sa-border-1:#e3e8ef; --sa-border-2:#eef1f5;
+  --sa-bg-page:#f5f7fa; --sa-bg-card:#fff; --sa-bg-hover:#f7f9fc;
+  --sa-chart-academic:#2b5ce6; --sa-chart-moral:#7a5af8; --sa-chart-logistics:#00a38d;
+  --sa-chart-party:#f2a33c; --sa-chart-science:#3e8ede; --sa-chart-sport:#e8544b;
+  --sa-chart-axis:#d9dfe8; --sa-chart-split:#eef1f5;
+  --sa-space-1:4px; --sa-space-2:8px; --sa-space-3:12px; --sa-space-4:16px; --sa-space-5:20px; --sa-space-6:24px;
+  --sa-radius-sm:4px; --sa-radius-md:6px; --sa-radius-lg:8px; --sa-radius-xl:12px; --sa-radius-pill:999px;
+  --sa-shadow-card:0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.06);
+  --sa-shadow-float:0 4px 12px rgba(16,24,40,.10);
+  --sa-h-header:56px;
+  --sa-fs-12:12px; --sa-fs-13:13px; --sa-fs-14:14px; --sa-fs-16:16px; --sa-fs-20:20px; --sa-fs-32:32px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:"PingFang SC","Microsoft YaHei","Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-size:14px;color:var(--sa-text-1);background:var(--sa-bg-page);
+}
+.num{font-variant-numeric:tabular-nums}
+.card{background:var(--sa-bg-card);border:1px solid var(--sa-border-1);border-radius:var(--sa-radius-lg);box-shadow:var(--sa-shadow-card)}
+
+/* ============ 顶部栏 ============ */
+.app-hd{
+  height:var(--sa-h-header);background:#fff;border-bottom:1px solid var(--sa-border-1);
+  display:flex;align-items:center;gap:16px;padding:0 24px;position:sticky;top:0;z-index:50;
+}
+.logo{font-size:16px;font-weight:600;letter-spacing:.5px}
+.logo span{color:var(--sa-primary)}
+.hd-spacer{flex:1}
+.hd-role{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--sa-text-2)}
+select{padding:6px 8px;border:1px solid var(--sa-border-1);border-radius:var(--sa-radius-md);background:#fff;font-size:13px;color:var(--sa-text-1)}
+.bell{position:relative;width:32px;height:32px;border-radius:50%;border:1px solid var(--sa-border-1);background:#fff;cursor:pointer;font-size:15px;line-height:1}
+.bell:hover{background:var(--sa-bg-hover)}
+.badge{position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;padding:0 4px;border-radius:var(--sa-radius-pill);background:var(--sa-danger);color:#fff;font-size:11px;line-height:16px;text-align:center}
+
+/* ============ 布局 ============ */
+.page{padding:24px;max-width:1440px;margin:0 auto}
+.hd-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:16px;flex-wrap:wrap}
+h2.t{font-size:20px;font-weight:600;margin:0}
+p.sub{margin:4px 0 0;font-size:12px;color:var(--sa-text-3)}
+.ops{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.asof{font-size:12px;color:var(--sa-text-3)}
+.btn{padding:6px 12px;height:32px;border:1px solid var(--sa-border-1);border-radius:var(--sa-radius-md);background:#fff;font-size:13px;cursor:pointer;color:var(--sa-text-1)}
+.btn:hover{background:var(--sa-bg-hover)}
+.btn-primary{background:var(--sa-primary);border-color:var(--sa-primary);color:#fff}
+.btn-primary:hover{background:var(--sa-primary-hover)}
+.btn-lg{height:40px;padding:0 20px;font-size:15px}
+.btn:disabled{background:var(--sa-bg-hover);color:var(--sa-text-3);cursor:not-allowed;border-color:var(--sa-border-1)}
+.seg{display:inline-flex;border:1px solid var(--sa-border-1);border-radius:var(--sa-radius-md);overflow:hidden}
+.seg button{padding:5px 12px;font-size:13px;border:0;background:#fff;cursor:pointer;color:var(--sa-text-2)}
+.seg button+button{border-left:1px solid var(--sa-border-1)}
+.seg button.on{background:var(--sa-primary);color:#fff}
+.hint{font-size:12px;color:var(--sa-text-3);display:inline-flex;align-items:center;gap:4px}
+.grid{display:grid;gap:16px}
+.g6{grid-template-columns:repeat(6,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g-auto{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+@media(max-width:1180px){.g6{grid-template-columns:repeat(3,1fr)}.g4,.g3{grid-template-columns:repeat(2,1fr)}.g2{grid-template-columns:1fr}}
+@media(max-width:760px){.g6,.g4,.g3{grid-template-columns:1fr}}
+
+/* ============ KPI 卡 ============ */
+.kpi{position:relative;height:96px;padding:16px 20px;border-radius:var(--sa-radius-xl);display:flex;flex-direction:column;justify-content:space-between}
+.kpi::before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:3px;border-radius:var(--sa-radius-pill);background:transparent}
+.kpi.warn::before{background:var(--sa-warning)}
+.kpi.danger{background:var(--sa-danger-bg)}
+.kpi.danger::before{background:var(--sa-danger)}
+.kpi-l{display:flex;align-items:center;gap:8px;min-height:20px}
+.kpi-l b{font-size:13px;font-weight:400;color:var(--sa-text-2)}
+.kpi-v{font-size:32px;font-weight:600;line-height:1.25}
+.kpi-v i{font-size:13px;font-weight:400;color:var(--sa-text-3);font-style:normal;margin-left:2px}
+.kpi-f{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sa-text-3)}
+.up{color:var(--sa-trend-up)} .down{color:var(--sa-trend-down)} .flat{color:var(--sa-trend-flat)}
+.tag{font-size:11px;padding:1px 8px;border-radius:var(--sa-radius-pill);line-height:18px}
+.tag-w{background:var(--sa-warning-bg);color:var(--sa-warning)}
+.tag-d{background:#fbdad6;color:var(--sa-danger)}
+.tag-s{background:var(--sa-success-bg);color:var(--sa-success)}
+.tag-p{background:var(--sa-primary-bg);color:var(--sa-primary)}
+.tag-n{background:var(--sa-bg-hover);color:var(--sa-text-3)}
+
+/* ============ 预警区 ============ */
+.alert{margin-bottom:16px;padding:16px 20px;background:var(--sa-danger-bg);border:1px solid #f6c9c4}
+.alert-hd{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.alert-hd h3{margin:0;font-size:14px;font-weight:500}
+.alert-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:8px}
+.alert-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fff;border:1px solid var(--sa-border-1);border-radius:var(--sa-radius-md);cursor:pointer;font-size:13px}
+.alert-item:hover{box-shadow:var(--sa-shadow-float)}
+.alert-go{margin-left:auto;color:var(--sa-primary);font-size:12px}
+.overdue{color:var(--sa-danger);font-size:12px}
+.owner{color:var(--sa-text-3);font-size:12px}
+
+/* ============ 图表卡 ============ */
+.chart{padding:16px 20px 12px;display:flex;flex-direction:column}
+.chart-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.chart-hd h3{margin:0;font-size:14px;font-weight:500}
+.chart-bd{flex:1;min-height:0}
+svg{display:block;width:100%;height:100%}
+.lg{display:flex;gap:16px;font-size:12px;color:var(--sa-text-3);flex-wrap:wrap}
+.lg i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:0}
+
+/* ============ 教师工作台 ============ */
+.qcard{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-height:104px;padding:16px;text-align:left;border:1px solid var(--sa-border-1);border-radius:var(--sa-radius-lg);background:#fff;cursor:pointer;box-shadow:var(--sa-shadow-card)}
+.qcard:hover{border-color:var(--sa-primary-border);box-shadow:var(--sa-shadow-float)}
+.qcard .ic{font-size:20px;color:var(--sa-primary)}
+.qcard .nm{font-size:16px;font-weight:500}
+.qcard .st{font-size:12px;color:var(--sa-text-3)}
+.sec-t{font-size:16px;font-weight:500;margin:0 0 12px}
+.mine{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:24px}
+.mine-c{padding:16px 20px;cursor:pointer}
+.mine-c h4{margin:0;font-size:14px;font-weight:500}
+.mine-c p{margin:4px 0 0;font-size:12px;color:var(--sa-text-3)}
+
+/* ============ 抽屉 ============ */
+.mask{position:fixed;inset:0;background:rgba(27,31,39,.45);z-index:2000;display:none}
+.mask.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:480px;max-width:92vw;background:#fff;z-index:2100;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .2s cubic-bezier(.4,0,.2,1)}
+.drawer.on{transform:translateX(0)}
+.dr-hd{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--sa-border-1)}
+.dr-hd h3{margin:0;font-size:16px;font-weight:500}
+.dr-bd{flex:1;overflow:auto;padding:20px}
+.dr-ft{padding:12px 20px;border-top:1px solid var(--sa-border-1);display:flex;justify-content:flex-end;gap:8px}
+.steps{margin-bottom:16px;padding:8px 12px;background:var(--sa-primary-bg);border-radius:var(--sa-radius-md);font-size:12px;color:var(--sa-primary)}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:13px;color:var(--sa-text-2);margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;padding:7px 10px;border:1px solid var(--sa-border-1);border-radius:var(--sa-radius-md);font-size:14px;font-family:inherit;color:var(--sa-text-1)}
+.field textarea{resize:vertical;min-height:72px}
+.field .tip{margin-top:4px;font-size:12px;color:var(--sa-text-3)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.slots{display:flex;flex-wrap:wrap;gap:8px}
+.slot{border:1px solid var(--sa-border-1);border-radius:var(--sa-radius-md);padding:5px 10px;font-size:13px;background:#fff;cursor:pointer;color:var(--sa-text-2)}
+.slot.on{background:var(--sa-primary);border-color:var(--sa-primary);color:#fff}
+
+/* ============ 冲突提示 ============ */
+.ca{border-radius:var(--sa-radius-md);padding:12px 16px;border:1px solid var(--sa-border-1);margin-top:16px}
+.ca.warn{background:var(--sa-warning-bg);border-color:#f4d9b0}
+.ca.err{background:var(--sa-danger-bg);border-color:#f6c9c4}
+.ca-hd{display:flex;align-items:center;gap:8px}
+.ca-hd b{flex:1;font-size:14px;font-weight:500}
+.ca p{margin:8px 0 0;font-size:13px;line-height:1.5;color:var(--sa-text-2)}
+.ca .lb{margin-top:12px;font-size:12px;color:var(--sa-text-3)}
+.ca-acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+
+/* ============ 消息 ============ */
+.msg-item{padding:12px;border-bottom:1px solid var(--sa-border-2);border-radius:var(--sa-radius-md);cursor:pointer}
+.msg-item:hover{background:var(--sa-bg-hover)}
+.msg-row{display:flex;align-items:center;gap:8px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--sa-danger)}
+.msg-time{margin-left:auto;font-size:12px;color:var(--sa-text-3)}
+.msg-title{margin:8px 0 4px;font-size:14px;line-height:1.5}
+.msg-go{font-size:12px;color:var(--sa-primary)}
+.note{font-size:12px;color:var(--sa-text-3);line-height:1.6;background:#fff;border:1px solid var(--sa-border-1);border-radius:var(--sa-radius-md);padding:10px 12px;margin-bottom:16px}
+.toast{position:fixed;left:50%;top:24px;transform:translateX(-50%);z-index:3000;background:#fff;border:1px solid var(--sa-border-1);border-radius:var(--sa-radius-md);box-shadow:var(--sa-shadow-float);padding:10px 16px;font-size:14px;display:none}
+.toast.on{display:block}
+.ok-box{margin-top:16px;padding:16px;background:var(--sa-success-bg);border-radius:var(--sa-radius-md);font-size:13px;color:#14663a}
+</style>
+</head>
+<body>
+
+<!-- ================= 顶部栏 ================= -->
+<header class="app-hd">
+  <div class="logo">中学校务<span>数字化平台</span></div>
+  <div class="hd-spacer"></div>
+  <div class="hd-role">
+    当前角色
+    <select id="roleSel">
+      <option value="PRINCIPAL">R-PRINCIPAL 校长</option>
+      <option value="DEAN">R-DEAN 教务主任</option>
+      <option value="GRADE">R-GRADE 年级组长</option>
+      <option value="TEACHER">R-TEACHER 教师</option>
+      <option value="STUDENT">R-STUDENT 学生</option>
+    </select>
+  </div>
+  <button class="bell" id="bellBtn" title="消息中心">
+    🔔<span class="badge" id="bellBadge">3</span>
+  </button>
+</header>
+
+<main class="page" id="app"></main>
+
+<!-- 抽屉 -->
+<div class="mask" id="mask"></div>
+<aside class="drawer" id="drawer">
+  <div class="dr-hd"><h3 id="drTitle">申请</h3><button class="btn" id="drClose">关闭</button></div>
+  <div class="dr-bd" id="drBody"></div>
+  <div class="dr-ft"><button class="btn" id="drCancel">取消</button><button class="btn btn-primary btn-lg" id="drSubmit">提交</button></div>
+</aside>
+
+<!-- 消息抽屉 -->
+<aside class="drawer" id="msgDrawer" style="width:420px">
+  <div class="dr-hd"><h3>消息中心</h3><button class="btn" id="msgClose">关闭</button></div>
+  <div class="dr-bd" id="msgBody"></div>
+</aside>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================================
+   设计验证原型（零依赖）
+   -------------------------------------------------------------------------
+   用途：验证「布局层级 / 分角色视图 / 高频事务步数 / 冲突文案」四项设计决策。
+   数据为 Mock，口径与真实实现一致：前端只渲染，聚合与鉴权由服务端完成。
+   ========================================================================= */
+
+/* ---------- Mock：服务端聚合结果（结构对齐 design/src/api/types.ts） ---------- */
+var MOCK = {
+  PRINCIPAL: {
+    title:'全校驾驶舱', subtitle:'数据范围：全校 · 口径：当前学期', scope:'全校',
+    kpis:[
+      {code:'COVERAGE',label:'课表完整率',value:98.6,unit:'%',mom:1.2,yoy:3.4,trend:'UP',status:'NORMAL',polarity:'POSITIVE'},
+      {code:'LEAVE',label:'请假人次',value:216,unit:'人次',mom:8.5,yoy:-4.1,trend:'UP',status:'WARNING',polarity:'NEGATIVE',th:'超过上学期同期 8.5%'},
+      {code:'PURCHASE',label:'采购执行率',value:73.2,unit:'%',mom:5.6,yoy:9.8,trend:'UP',status:'NORMAL',polarity:'POSITIVE'},
+      {code:'STOCK',label:'库存告警物资',value:7,unit:'项',mom:40.0,yoy:16.7,trend:'UP',status:'DANGER',polarity:'NEGATIVE',th:'阈值：>5 项告警'},
+      {code:'NOTICE',label:'公告已读率',value:91.4,unit:'%',mom:-2.3,yoy:6.2,trend:'DOWN',status:'NORMAL',polarity:'POSITIVE'},
+      {code:'FITNESS',label:'体测达标率',value:88.1,unit:'%',mom:2.1,yoy:5.0,trend:'UP',status:'NORMAL',polarity:'POSITIVE'}
+    ],
+    alerts:[
+      {id:1,level:'DANGER',title:'超期未到货：多媒体教学一体机（12 台）',owner:'后勤 王主任',overdue:'已超期 6 天'},
+      {id:2,level:'DANGER',title:'审批滞留：物资领用单 MAT-2026-0312 待审批',owner:'后勤 王主任',overdue:'滞留 4 天'},
+      {id:3,level:'WARNING',title:'排课冲突：高三(2)班 周三第 3 节 双占用',owner:'教务 李主任',overdue:'待处理 2 天'},
+      {id:4,level:'WARNING',title:'库存不足：A4 复印纸 可用 3 包',owner:'后勤 王主任',overdue:'低于安全库存'},
+      {id:5,level:'WARNING',title:'违纪高频：高二(4)班 本周 5 起',owner:'德育 张老师'},
+      {id:6,level:'DANGER',title:'报修超时：实验楼 3 层 水电故障',owner:'后勤 维修组',overdue:'超时 12 小时'}
+    ],
+    charts:[
+      {code:'TREND_PURCHASE',type:'LINE',title:'采购金额趋势（万元）',categories:['第1周','第3周','第5周','第7周','第9周','第11周','第13周','第15周'],series:[{name:'采购金额',data:[12,18,9,24,31,22,28,35],colorKey:'logistics'}]},
+      {code:'TREND_REPAIR',type:'LINE',title:'报修量与平均响应时长',categories:['第1周','第3周','第5周','第7周','第9周','第11周','第13周','第15周'],series:[{name:'报修量',data:[8,12,15,11,9,14,18,13],colorKey:'party'},{name:'响应时长(h)',data:[6,5,8,7,4,6,9,5],colorKey:'science'}]},
+      {code:'DIST_LEAVE',type:'BAR',title:'各年级请假人次分布',categories:['高一','高二','高三'],series:[{name:'请假人次',data:[62,78,76],colorKey:'moral'}]},
+      {code:'CMP_GRADE_FITNESS',type:'BAR_H',title:'各年级体测达标率（%）',categories:['高三(8)班','高二(3)班','高一(1)班','高二(6)班'],series:[{name:'达标率',data:[72,81,86,93],colorKey:'sport'}]},
+      {code:'RADAR_DOMAIN_HEALTH',type:'RADAR',title:'六域健康度',categories:['教务','德育','后勤','党政办','科教','体育'],indicators:[{name:'教务',max:100},{name:'德育',max:100},{name:'后勤',max:100},{name:'党政办',max:100},{name:'科教',max:100},{name:'体育',max:100}],series:[{name:'健康度',data:[92,78,71,85,88,83],colorKey:'academic'}]}
+    ]
+  },
+  DEAN: {
+    title:'教务运营大屏', subtitle:'数据范围：全校 · 口径：当前学期（周次）', scope:'全校',
+    kpis:[
+      {code:'COVERAGE',label:'课表完整率',value:98.6,unit:'%',mom:1.2,yoy:3.4,trend:'UP',status:'NORMAL',polarity:'POSITIVE'},
+      {code:'CONFLICT',label:'排课冲突数',value:4,unit:'处',mom:33.3,yoy:-20.0,trend:'UP',status:'DANGER',polarity:'NEGATIVE',th:'阈值：>0 处即预警'},
+      {code:'SOFT_VIOLATION',label:'软约束违规数',value:23,unit:'条',mom:-8.0,yoy:-15.0,trend:'DOWN',status:'WARNING',polarity:'NEGATIVE'},
+      {code:'CHANGE',label:'调课·代课次数',value:57,unit:'次',mom:12.4,yoy:6.1,trend:'UP',status:'WARNING',polarity:'NEGATIVE'},
+      {code:'HOURS',label:'教师周课时均值',value:14.2,unit:'节',mom:0.7,yoy:-1.4,trend:'UP',status:'NORMAL',polarity:'POSITIVE'}
+    ],
+    alerts:[
+      {id:1,level:'DANGER',title:'排课冲突：高三(2)班 周三第 3 节 数学/物理 双占用',owner:'教务 李主任',overdue:'待处理 2 天'},
+      {id:2,level:'WARNING',title:'软约束违规集中：高二 连堂 3 节以上 共 9 条',owner:'教务 李主任'},
+      {id:3,level:'WARNING',title:'调课频繁：高一(5)班 本周 6 次调课',owner:'年级组长 陈老师'}
+    ],
+    charts:[
+      {code:'TREND_CHANGE',type:'LINE',title:'调课·代课次数趋势',categories:['第1周','第3周','第5周','第7周','第9周','第11周','第13周','第15周'],series:[{name:'调课',data:[3,5,8,6,9,7,11,8],colorKey:'academic'}]},
+      {code:'DIST_CONFLICT',type:'BAR',title:'排课冲突分布（按班级）',categories:['高一','高二','高三'],series:[{name:'冲突数',data:[0,1,3],colorKey:'moral'}]},
+      {code:'CMP_TEACHER_HOURS',type:'BAR_H',title:'教师周课时分布（节）',categories:['语文组','数学组','英语组','物理组','化学组'],series:[{name:'周课时',data:[12,16,14,15,11],colorKey:'academic'}]},
+      {code:'RADAR_SCHEDULE_QUALITY',type:'RADAR',title:'排课质量',categories:['完整率','冲突控制','软约束','均衡度','稳定度'],indicators:[{name:'完整率',max:100},{name:'冲突控制',max:100},{name:'软约束',max:100},{name:'均衡度',max:100},{name:'稳定度',max:100}],series:[{name:'当前',data:[99,76,81,88,72],colorKey:'academic'}]}
+    ]
+  },
+  GRADE: {
+    title:'本年级运营大屏', subtitle:'数据范围：本年级（高二） · 口径：当前学期', scope:'本年级',
+    kpis:[
+      {code:'LEAVE',label:'本年级请假人次',value:78,unit:'人次',mom:6.8,yoy:-3.2,trend:'UP',status:'WARNING',polarity:'NEGATIVE'},
+      {code:'DISC',label:'本年级违纪数',value:19,unit:'起',mom:26.7,yoy:11.8,trend:'UP',status:'DANGER',polarity:'NEGATIVE'},
+      {code:'FITNESS',label:'体测达标率',value:86.4,unit:'%',mom:1.9,yoy:4.3,trend:'UP',status:'NORMAL',polarity:'POSITIVE'},
+      {code:'COVERAGE',label:'课表完整率',value:99.1,unit:'%',mom:0.6,yoy:2.1,trend:'UP',status:'NORMAL',polarity:'POSITIVE'}
+    ],
+    alerts:[
+      {id:1,level:'DANGER',title:'违纪高频：高二(4)班 本周 5 起',owner:'班主任 刘老师'},
+      {id:2,level:'WARNING',title:'请假集中：高二(2)班 本周 11 人次',owner:'班主任 王老师'}
+    ],
+    charts:[
+      {code:'DIST_LEAVE',type:'BAR',title:'本年级各班请假人次',categories:['1班','2班','3班','4班','5班','6班'],series:[{name:'请假人次',data:[8,11,6,9,7,10],colorKey:'moral'}]},
+      {code:'CMP_CLASS_DISCIPLINE',type:'BAR_H',title:'各班违纪数对比',categories:['4班','2班','6班','1班'],series:[{name:'违纪数',data:[5,4,3,2],colorKey:'moral'}]}
+    ]
+  }
+};
+
+/* ---------- 教师端高频事务 Schema（对齐 components/QuickApply/schemas.ts） ---------- */
+var ACTIONS = [
+  {code:'materialApply',icon:'📦',title:'物资领用申请',btn:'BTN-MAT-APPLY',step:'2 步：点「物资领用」→ 填写提交',
+   fields:[{k:'asset',l:'领用物资',t:'select',opts:['A4 复印纸（可用 3 包）','中性笔 0.5mm（可用 120 支）','白板笔（可用 24 支）','实验手套（可用 60 双）']},
+           {k:'qty',l:'数量',t:'number',def:1},{k:'usage',l:'用途',t:'textarea',ph:'如：高三(1)班 期末复习资料印制'}],
+   ok:'已提交，单号 MAT-2026-0418，审批结果将发到消息中心'},
+  {code:'repairSubmit',icon:'🔧',title:'报修提交',btn:'BTN-REP-SUBMIT',step:'2 步：点「报修提交」→ 填写提交',
+   fields:[{k:'space',l:'报修位置',t:'select',opts:['教学楼 A 座 301','教学楼 B 座 205','实验楼 3 层 物理实验室','办公楼 2 层 会议室']},
+           {k:'type',l:'故障类型',t:'select',opts:['水电','门窗','桌椅','多媒体','空调','网络','其它']},
+           {k:'desc',l:'问题描述',t:'textarea',ph:'如：讲台上方灯管不亮，影响上课'}],
+   ok:'已提交，工单号 REP-2026-0231，可在「我的报修」跟踪进度'},
+  {code:'leaveApply',icon:'📅',title:'请假申请',btn:'BTN-LEAVE-APPLY',step:'2 步：点「请假申请」→ 填写提交',
+   fields:[{k:'type',l:'请假类型',t:'select',opts:['病假','事假','公假','外出']},{k:'days',l:'天数',t:'number',def:1},{k:'reason',l:'事由',t:'textarea'}],
+   ok:'已提交，单号 LV-2026-1187，审批结果将发到消息中心'},
+  {code:'scheduleChangeApply',icon:'🕒',title:'调课 / 代课申请',btn:'BTN-SCH-CHANGE-APPLY',step:'2 步：点「调课/代课」→ 填写提交',
+   fields:[{k:'reason',l:'调整原因',t:'select',opts:['因公外出','病假','事假','教研活动']},{k:'periods',l:'涉及节次',t:'number',def:1},{k:'remark',l:'说明',t:'textarea'}],
+   ok:'已提交，单号 SCH-2026-0092，由教务主任审批'},
+  {code:'meetingRoomBook',icon:'🏢',title:'会议室预约',btn:'BTN-PARTY-ROOM-BOOK',step:'3 步：点「会议室预约」→ 选时段 → 提交（默认已选中最近空闲时段）',
+   fields:[{k:'room',l:'会议室',t:'select',opts:['办公楼 201 小会议室（12人）','办公楼 305 大会议室（40人）','实验楼 会议室（20人）']},
+           {k:'week',l:'周次',t:'number',def:9},{k:'slot',l:'时段',t:'slots',tip:'已排除被课表占用的时段；默认选中最近一个空闲时段'},
+           {k:'subject',l:'会议主题',t:'text',ph:'如：高二年级期中质量分析会'},{k:'count',l:'参会人数',t:'number',def:8}],
+   ok:'预约成功，预约号 BK-2026-0455'},
+  {code:'labBook',icon:'🧪',title:'实验预约',btn:'BTN-SCI-LAB-BOOK',step:'3 步：点「实验预约」→ 选时段 → 提交',
+   fields:[{k:'lab',l:'实验室',t:'select',opts:['物理实验室 A','化学实验室 B','生物实验室 C']},
+           {k:'week',l:'周次',t:'number',def:9},{k:'slot',l:'时段',t:'slots',tip:'已排除被课表占用的时段'},
+           {k:'subject',l:'实验项目',t:'text',ph:'如：探究加速度与力的关系'},{k:'count',l:'学生人数',t:'number',def:45}],
+   ok:'预约成功，预约号 BK-2026-0456'}
+];
+
+/* 角色可见的快捷事务（模拟 RBAC 按钮矩阵，服务端仍是安全边界） */
+var ROLE_ACTIONS = {
+  TEACHER:['materialApply','repairSubmit','leaveApply','scheduleChangeApply','meetingRoomBook','labBook'],
+  STUDENT:['leaveApply']
+};
+
+var MSGS = [
+  {id:1,unread:true,cat:'审批',title:'你提交的物资领用单 MAT-2026-0412 已通过',time:'10:24',link:'业务详情：领用单 MAT-2026-0412'},
+  {id:2,unread:true,cat:'公告',title:'关于 2025-2026 学年第二学期期中考试安排的通知',time:'09:02',link:'业务详情：通知公告 M1201'},
+  {id:3,unread:true,cat:'会议',title:'高二年级期中质量分析会（办公楼 305，周四 16:00）',time:'昨天',link:'业务详情：会议 M1205'},
+  {id:4,unread:false,cat:'预警',title:'你名下的实验器材「游标卡尺」已超期未归还 3 天',time:'前天',link:'业务详情：资产归还 M0302'}
+];
+
+/* ================= 渲染 ================= */
+var state = { role:'PRINCIPAL', dim:'TERM', countdown:60, step:0, act:null, conflict:null, submitted:null };
+var C = {academic:'#2b5ce6',moral:'#7a5af8',logistics:'#00a38d',party:'#f2a33c',science:'#3e8ede',sport:'#e8544b'};
+
+function el(id){return document.getElementById(id)}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function fmtPct(v){if(v==null)return '—';return (v>0?'+':'')+v.toFixed(1)+'%'}
+
+/* ---------- SVG 图表 ---------- */
+function svgLine(c, s){
+  var W=600,H=240,L=38,R=12,T=16,B=30, iw=W-L-R, ih=H-T-B;
+  var max=0; s.forEach(function(se){se.data.forEach(function(v){if(v>max)max=v})});
+  max=max||1; max=Math.ceil(max*1.15);
+  var n=c.length, x=function(i){return L+(n===1?iw/2:iw*i/(n-1))}, y=function(v){return T+ih-ih*v/max};
+  var g='';
+  for(var t=0;t<=4;t++){var yy=T+ih*t/4; g+='<line x1="'+L+'" y1="'+yy+'" x2="'+(W-R)+'" y2="'+yy+'" stroke="#eef1f5"/>'+
+      '<text x="'+(L-6)+'" y="'+(yy+4)+'" font-size="11" fill="#8a94a6" text-anchor="end">'+Math.round(max*(1-t/4))+'</text>';}
+  c.forEach(function(cx,i){g+='<text x="'+x(i)+'" y="'+(H-10)+'" font-size="11" fill="#8a94a6" text-anchor="middle">'+esc(cx)+'</text>'});
+  s.forEach(function(se,si){
+    var col=C[se.colorKey]||'#a9b3c4';
+    var pts=se.data.map(function(v,i){return x(i)+','+y(v)}).join(' ');
+    if(s.length===1){
+      g+='<polygon points="'+L+','+(T+ih)+' '+pts+' '+(W-R)+','+(T+ih)+'" fill="'+col+'" opacity="0.08"/>';
+    }
+    g+='<polyline points="'+pts+'" fill="none" stroke="'+col+'" stroke-width="2"/>';
+    se.data.forEach(function(v,i){g+='<circle cx="'+x(i)+'" cy="'+y(v)+'" r="3" fill="#fff" stroke="'+col+'" stroke-width="2"/>';});
+  });
+  return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+g+'</svg>';
+}
+function svgBar(c, s){
+  var W=600,H=240,L=38,R=12,T=16,B=30, iw=W-L-R, ih=H-T-B;
+  var max=0; s.forEach(function(se){se.data.forEach(function(v){if(v>max)max=v})}); max=max||1; max=Math.ceil(max*1.15);
+  var g='';
+  for(var t=0;t<=4;t++){var yy=T+ih*t/4; g+='<line x1="'+L+'" y1="'+yy+'" x2="'+(W-R)+'" y2="'+yy+'" stroke="#eef1f5"/>'+
+      '<text x="'+(L-6)+'" y="'+(yy+4)+'" font-size="11" fill="#8a94a6" text-anchor="end">'+Math.round(max*(1-t/4))+'</text>';}
+  var bw=Math.min(28, iw/c.length*0.5);
+  c.forEach(function(cx,i){
+    var cx0=L+iw*(i+0.5)/c.length;
+    s.forEach(function(se,si){
+      var h=ih*se.data[i]/max, col=C[se.colorKey]||'#a9b3c4';
+      var bx=cx0-(s.length*bw)/2+si*bw;
+      g+='<rect x="'+bx+'" y="'+(T+ih-h)+'" width="'+(bw-4)+'" height="'+h+'" rx="4" fill="'+col+'"/>';
+    });
+    g+='<text x="'+cx0+'" y="'+(H-10)+'" font-size="11" fill="#8a94a6" text-anchor="middle">'+esc(cx)+'</text>';
+  });
+  return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+g+'</svg>';
+}
+function svgBarH(c, s){
+  var W=600,H=240,L=76,R=40,T=12,B=12, iw=W-L-R, ih=H-T-B;
+  var max=0; s.forEach(function(se){se.data.forEach(function(v){if(v>max)max=v})}); max=max||1; max=Math.ceil(max*1.15);
+  var g='', rowH=ih/c.length, bh=Math.min(16,rowH*0.5);
+  c.forEach(function(cx,i){
+    var yy=T+rowH*i+rowH/2;
+    g+='<text x="'+(L-8)+'" y="'+(yy+4)+'" font-size="11" fill="#8a94a6" text-anchor="end">'+esc(cx)+'</text>';
+    s.forEach(function(se){
+      var col=C[se.colorKey]||'#a9b3c4', w=iw*se.data[i]/max;
+      g+='<rect x="'+L+'" y="'+(yy-bh/2)+'" width="'+Math.max(2,w)+'" height="'+bh+'" rx="4" fill="'+col+'"/>';
+      g+='<text x="'+(L+w+8)+'" y="'+(yy+4)+'" font-size="11" fill="#8a94a6">'+se.data[i]+'</text>';
+    });
+  });
+  return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+g+'</svg>';
+}
+function svgRadar(ch){
+  var W=600,H=240,cx=300,cy=120,R=78, ind=ch.indicators, n=ind.length, s=ch.series[0];
+  var col=C[s.colorKey]||'#2b5ce6', g='';
+  function pt(i,r){var a=-Math.PI/2+2*Math.PI*i/n; return [cx+r*Math.cos(a), cy+r*Math.sin(a)];}
+  for(var ring=1;ring<=4;ring++){
+    var p=[]; for(var i=0;i<n;i++){var q=pt(i,R*ring/4); p.push(q[0]+','+q[1]);}
+    g+='<polygon points="'+p.join(' ')+'" fill="none" stroke="#eef1f5"/>';
+  }
+  for(var i=0;i<n;i++){var q=pt(i,R); g+='<line x1="'+cx+'" y1="'+cy+'" x2="'+q[0]+'" y2="'+q[1]+'" stroke="#eef1f5"/>';}
+  var pts=[];
+  for(var i=0;i<n;i++){var v=(s.data[i]||0)/(ind[i].max||100); var q=pt(i,R*v); pts.push(q[0]+','+q[1]);}
+  g+='<polygon points="'+pts.join(' ')+'" fill="'+col+'" fill-opacity="0.12" stroke="'+col+'" stroke-width="2"/>';
+  for(var i=0;i<n;i++){var q=pt(i,R*(s.data[i]||0)/(ind[i].max||100)); g+='<circle cx="'+q[0]+'" cy="'+q[1]+'" r="3" fill="'+col+'"/>';
+    var lb=pt(i,R+18); g+='<text x="'+lb[0]+'" y="'+(lb[1]+4)+'" font-size="11" fill="#8a94a6" text-anchor="middle">'+esc(ind[i].name)+'</text>';}
+  return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+g+'</svg>';
+}
+function chartSvg(ch){
+  if(ch.type==='LINE')return svgLine(ch.categories,ch.series);
+  if(ch.type==='BAR')return svgBar(ch.categories,ch.series);
+  if(ch.type==='BAR_H')return svgBarH(ch.categories,ch.series);
+  return svgRadar(ch);
+}
+
+/* ---------- 大屏 ---------- */
+function renderScreen(){
+  var d = MOCK[state.role];
+  if(!d){ renderWorkbench(); return; }
+  var kpiCls = d.kpis.length>=6? 'g6' : 'g4';
+  var h = '';
+  h += '<div class="hd-row"><div><h2 class="t">'+d.title+'</h2><p class="sub">'+d.subtitle+' · 数据截止 2026-03-18 10:40 · '+state.countdown+'s 后刷新</p></div>'+
+       '<div class="ops">'+
+         '<div class="seg"><button class="'+(state.dim==='TERM'?'on':'')+'" onclick="setDim(\'TERM\')">学期</button><button class="'+(state.dim==='MONTH'?'on':'')+'" onclick="setDim(\'MONTH\')">自然月</button></div>'+
+         '<span class="hint">ℹ '+(state.dim==='TERM'?'当前：2025-2026 学年 第二学期':'当前：自然月（仅展示维度，可见数据与权限判定不变）')+'</span>'+
+         '<button class="btn" onclick="toast(\'已刷新\')">刷新</button>'+
+       '</div></div>';
+
+  if(d.alerts.length){
+    h += '<section class="card alert"><div class="alert-hd"><span style="color:#c0362c">⚠</span><h3>异常预警（需处理）</h3>'+
+      '<span class="tag tag-d">'+d.alerts.length+'</span></div><ul class="alert-list">';
+    d.alerts.forEach(function(a){
+      h += '<li class="alert-item"><span class="tag '+(a.level==='DANGER'?'tag-d':'tag-w')+'">'+(a.level==='DANGER'?'严重':'预警')+'</span>'+
+        '<span>'+esc(a.title)+'</span>'+(a.owner?'<span class="owner">责任人 '+esc(a.owner)+'</span>':'')+
+        (a.overdue?'<span class="overdue">'+esc(a.overdue)+'</span>':'')+'<span class="alert-go">去处理 →</span></li>';
+    });
+    h += '</ul></section>';
+  }
+
+  h += '<section class="grid '+kpiCls+'" style="margin-bottom:16px">';
+  d.kpis.forEach(function(k){
+    var cls = k.status==='DANGER'?'danger':(k.status==='WARNING'?'warn':'');
+    var good = k.polarity==='NEGATIVE' ? (k.trend==='DOWN') : (k.trend==='UP');
+    var tcls = k.trend==='FLAT'?'flat':(good?'up':'down');
+    var arrow = k.trend==='UP'?'▲':(k.trend==='DOWN'?'▼':'—');
+    h += '<div class="card kpi '+cls+'" title="'+esc(k.th||'')+'" onclick="toast(\'下钻：'+k.label+' 明细\')">'+
+      '<div class="kpi-l"><b>'+k.label+'</b>'+(k.status!=='NORMAL'?'<span class="tag '+(k.status==='DANGER'?'tag-d':'tag-w')+'">'+(k.status==='DANGER'?'超阈值':'预警')+'</span>':'')+'</div>'+
+      '<div class="kpi-v num">'+k.value+'<i>'+(k.unit||'')+'</i></div>'+
+      '<div class="kpi-f"><span class="'+tcls+'">'+arrow+' 环比 '+fmtPct(k.mom)+'</span><span>同比 '+fmtPct(k.yoy)+'</span></div></div>';
+  });
+  h += '</section>';
+
+  h += '<section class="grid g2">';
+  d.charts.forEach(function(ch){
+    h += '<div class="card chart" style="min-height:288px"><div class="chart-hd"><h3>'+esc(ch.title)+'</h3>'+
+      '<span class="hint" style="cursor:pointer" onclick="toast(\'下钻明细（服务端仍按数据权限过滤）\')">查看明细</span></div>'+
+      '<div class="chart-bd">'+chartSvg(ch)+'</div>'+
+      '<div class="lg" style="margin-top:8px">'+ch.series.map(function(s){return '<span><i style="background:'+(C[s.colorKey]||'#a9b3c4')+'"></i>'+s.name+'</span>'}).join('')+'</div></div>';
+  });
+  h += '</section>';
+  el('app').innerHTML = h;
+}
+
+/* ---------- 工作台（教师 / 学生） ---------- */
+function renderWorkbench(){
+  var codes = ROLE_ACTIONS[state.role]||[];
+  var h = '<div class="hd-row"><div><h2 class="t">我的工作台</h2><p class="sub">'+
+    (state.role==='STUDENT'?'本人事务视图（学生不开放大屏）':'个人事务视图 · 教师端不是大屏，是短路径工作台')+'</p></div></div>';
+
+  h += '<div class="note">设计约束：高频事务 ≤3 步。步数从进入系统算起，每 1 次点击 / 切页 = 1 步。'+
+       '本页所有事务均为「点卡片（第 1 步）→ 提交（第 2 步）」，场地类默认已选中最近空闲时段。</div>';
+
+  h += '<section><h3 class="sec-t">高频事务</h3><div class="grid g-auto">';
+  codes.forEach(function(code){
+    var a = ACTIONS.find(function(x){return x.code===code});
+    h += '<button class="qcard" onclick="openAct(\''+code+'\')"><span class="ic">'+a.icon+'</span>'+
+      '<span class="nm">'+a.title+'</span><span class="st">'+a.step+'</span></button>';
+  });
+  h += '</div></section>';
+
+  h += '<section class="mine">'+
+    '<div class="card mine-c" onclick="toast(\'我的课表 M0701\')"><h4>今日课表</h4><p>查看本人今日课节与调课结果</p></div>'+
+    '<div class="card mine-c" onclick="toast(\'我的申请 M0103\')"><h4>我的申请</h4><p>领用 / 请假 / 调课，状态与驳回原因</p></div>'+
+    '<div class="card mine-c" onclick="toast(\'我的报修 M0104\')"><h4>我的报修</h4><p>工单进度与处理结果</p></div>'+
+    '</section>';
+  el('app').innerHTML = h;
+}
+
+/* ---------- 抽屉（快捷申请） ---------- */
+function openAct(code){
+  state.act = ACTIONS.find(function(x){return x.code===code});
+  state.conflict = null; state.submitted = null;
+  state.form = {};
+  state.act.fields.forEach(function(f){ state.form[f.k] = f.t==='number'? (f.def||1) : (f.t==='select'? f.opts[0] : ''); });
+  if(state.act.fields.some(function(f){return f.t==='slots'})) state.form.slot = '周三 第 5 节'; // 默认选中最近空闲时段
+  el('drTitle').textContent = state.act.title;
+  renderDrawerBody();
+  el('mask').classList.add('on'); el('drawer').classList.add('on');
+}
+function renderDrawerBody(){
+  var a = state.act, h = '<div class="steps">预计 '+a.step+'</div>';
+  a.fields.forEach(function(f){
+    if(f.t==='slots'){
+      h += '<div class="field"><label>'+f.l+'</label><div class="slots">'+
+        ['周一 第 3 节','周二 第 7 节','周三 第 5 节','周四 第 2 节','周五 第 6 节'].map(function(s){
+          return '<button class="slot '+(state.form.slot===s?'on':'')+'" onclick="pickSlot(\''+s+'\')">'+s+'</button>'}).join('')+
+        '</div><div class="tip">'+esc(f.tip||'')+' —— 灰色不可选时段表示已被课表占用（排课优先）</div></div>';
+    } else if(f.t==='select'){
+      h += '<div class="field"><label>'+f.l+'</label><select onchange="setVal(\''+f.k+'\',this.value)">'+
+        f.opts.map(function(o){return '<option '+(state.form[f.k]===o?'selected':'')+'>'+esc(o)+'</option>'}).join('')+'</select></div>';
+    } else if(f.t==='number'){
+      h += '<div class="field"><label>'+f.l+'</label><input type="number" min="1" value="'+state.form[f.k]+'" onchange="setVal(\''+f.k+'\',this.value)"></div>';
+    } else if(f.t==='textarea'){
+      h += '<div class="field"><label>'+f.l+'</label><textarea placeholder="'+esc(f.ph||'')+'" onchange="setVal(\''+f.k+'\',this.value)">'+esc(state.form[f.k]||'')+'</textarea></div>';
+    } else {
+      h += '<div class="field"><label>'+f.l+'</label><input placeholder="'+esc(f.ph||'')+'" value="'+esc(state.form[f.k]||'')+'" onchange="setVal(\''+f.k+'\',this.value)"></div>';
+    }
+  });
+
+  if(state.conflict) h += conflictHtml(state.conflict);
+  if(state.submitted) h += '<div class="ok-box">✓ '+esc(state.submitted)+'</div>';
+  el('drBody').innerHTML = h;
+}
+function conflictHtml(c){
+  var h = '<div class="ca '+(c.code===40901?'warn':'err')+'"><div class="ca-hd"><b>'+c.title+'</b></div><p>'+esc(c.why)+'</p>';
+  if(c.suggestions){
+    h += '<div class="lb">可改约这些空闲时段：</div><div class="ca-acts">'+
+      c.suggestions.map(function(s){return '<button class="btn" onclick="retrySlot(\''+s+'\')">'+s+'</button>'}).join('')+'</div>';
+  }
+  if(c.retryLabel) h += '<div class="ca-acts"><button class="btn btn-primary" onclick="retryQty()">'+c.retryLabel+'</button></div>';
+  h += '<div class="ca-acts"><button class="btn" onclick="state.conflict=null;renderDrawerBody()">知道了</button></div></div>';
+  return h;
+}
+function setVal(k,v){ state.form[k]=v; }
+function pickSlot(s){ state.form.slot=s; state.conflict=null; renderDrawerBody(); }
+function retrySlot(s){ state.form.slot=s; state.conflict=null; state.submitted=state.act.ok; renderDrawerBody(); toast('已改约：'+s+'，'+state.act.ok); }
+function retryQty(){ state.form.qty=3; state.conflict=null; state.submitted=state.act.ok; renderDrawerBody(); toast('已改为申请 3 件，'+state.act.ok); }
+
+el('drSubmit').onclick = function(){
+  var a=state.act;
+  // 演示冲突：会议室/实验室预约选“周二 第 7 节”= 被课表占用（40901）；会议主题含“抢”= 并发（40902）
+  if(a.code==='meetingRoomBook' || a.code==='labBook'){
+    if(state.form.slot==='周二 第 7 节'){
+      // 越权红线演示：当前是教师（数据范围 SELF），occupedBy 被服务端降级为占位文案，
+      // 且不给「查看该场地课表」入口（避免把用户引到必然 403 的页面）。
+      state.conflict={code:40901,title:'该时段已被课表占用，无法预约',
+        why:'排课是场地占用的权威来源：'+(a.code==='labBook'?'物理实验室 A':'办公楼 305 大会议室')+' 周二 第 7 节（已被课表占用）。预约不能覆盖排课，请另选时段。',
+        suggestions:['周三 第 5 节','周四 第 2 节','周五 第 6 节']};
+      renderDrawerBody(); return;
+    }
+    if((state.form.subject||'').indexOf('并发')>=0){
+      state.conflict={code:40902,title:'该时段刚被他人预约',
+        why:'办公楼 305 大会议室 '+state.form.slot+' 在你提交的同时被其他老师预约成功，同一时段只能有一个预约。',
+        suggestions:['周四 第 2 节','周五 第 6 节']};
+      renderDrawerBody(); return;
+    }
+  }
+  // 演示库存不足（AC-B1-3 不超卖）
+  if(a.code==='materialApply' && Number(state.form.qty)>3){
+    state.conflict={code:40903,title:'库存不足，本次申请未提交',
+      why:'A4 复印纸 当前可用 3 包，你申请了 '+state.form.qty+' 包。',retryLabel:'改为申请 3 包'};
+    renderDrawerBody(); return;
+  }
+  state.submitted = a.ok; renderDrawerBody(); toast('✓ '+a.ok);
+};
+
+function closeDrawer(){ el('mask').classList.remove('on'); el('drawer').classList.remove('on'); }
+el('drClose').onclick = closeDrawer; el('drCancel').onclick = closeDrawer; el('mask').onclick = closeDrawer;
+
+/* ---------- 消息中心（docs/15：不做正文预览，点击跳业务详情） ---------- */
+el('bellBtn').onclick = function(){
+  var unread = MSGS.filter(function(m){return m.unread}).length;
+  var h = '<div class="note">未读角标只反映<b>站内信自身</b>的已读状态；业务对象（公告/审批单/请假单）的已读回执由业务端记录，'+
+          '因此这里<b>不做正文预览</b>，点击直接打开业务详情页。</div>';
+  MSGS.forEach(function(m){
+    h += '<div class="msg-item" onclick="openMsg('+m.id+')"><div class="msg-row">'+
+      '<span class="tag tag-n">'+m.cat+'</span>'+(m.unread?'<span class="dot"></span>':'')+
+      '<span class="msg-time">'+m.time+'</span></div>'+
+      '<p class="msg-title">'+esc(m.title)+'</p><span class="msg-go">打开业务详情 →</span></div>';
+  });
+  el('msgBody').innerHTML = h;
+  el('msgDrawer').classList.add('on'); el('mask').classList.add('on');
+};
+function openMsg(id){
+  var m = MSGS.find(function(x){return x.id===id});
+  if(m.unread){ m.unread=false; var n=MSGS.filter(function(x){return x.unread}).length;
+    el('bellBadge').textContent = n; el('bellBadge').style.display = n? 'block':'none'; }
+  el('msgDrawer').classList.remove('on'); el('mask').classList.remove('on');
+  toast('跳转：'+m.link+'（已读回执由业务端记录）');
+}
+el('msgClose').onclick = function(){ el('msgDrawer').classList.remove('on'); el('mask').classList.remove('on'); };
+
+/* ---------- 全局 ---------- */
+function toast(t){ var e=el('toast'); e.textContent=t; e.classList.add('on'); clearTimeout(e._t); e._t=setTimeout(function(){e.classList.remove('on')},2600); }
+function setDim(d){ state.dim=d; renderScreen(); toast(d==='TERM'?'已切回学期口径':'已切到自然月（仅展示维度，可见数据与权限判定不变）'); }
+el('roleSel').onchange = function(){
+  state.role = this.value;
+  // 学生/家长：不开放大屏（docs/14 排除项 6）
+  if(state.role==='STUDENT'){ renderWorkbench(); toast('学生/家长不开放大屏，进入个人中心'); return; }
+  if(state.role==='TEACHER'){ renderWorkbench(); return; }
+  renderScreen();
+};
+setInterval(function(){ state.countdown-=1; if(state.countdown<=0)state.countdown=60;
+  var p=document.querySelector('.hd-row .sub'); if(p&&MOCK[state.role]) p.innerHTML=MOCK[state.role].subtitle+' · 数据截止 2026-03-18 10:40 · '+state.countdown+'s 后刷新'; },1000);
+
+renderScreen();
+</script>
+</body>
+</html>
