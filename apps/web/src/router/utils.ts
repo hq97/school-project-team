@@ -23,6 +23,7 @@ import { type menuType, routerArrays } from "@/layout/types";
 import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
 import { usePermissionStoreHook } from "@/store/modules/permission";
 const IFrame = () => import("@/layout/frame.vue");
+const Layout = () => import("@/layout/index.vue");
 // https://cn.vitejs.dev/guide/features.html#glob-import
 const modulesRoutes = import.meta.glob("/src/views/**/*.{vue,tsx}");
 
@@ -156,10 +157,12 @@ function addPathMatch() {
 
 /** 处理动态路由（后端返回的路由） */
 function handleAsyncRoutes(routeList) {
-  if (routeList.length === 0) {
-    usePermissionStoreHook().handleWholeMenus(routeList);
+  // addAsyncRoutes 会就地解析组件并返回「剔除无视图文件叶子/空目录」后的路由数组
+  const asyncRoutes = addAsyncRoutes(routeList);
+  if (asyncRoutes.length === 0) {
+    usePermissionStoreHook().handleWholeMenus(asyncRoutes);
   } else {
-    formatFlatteningRoutes(addAsyncRoutes(routeList)).map(
+    formatFlatteningRoutes(asyncRoutes).map(
       (v: RouteRecordRaw) => {
         // 防止重复添加路由
         if (
@@ -183,7 +186,7 @@ function handleAsyncRoutes(routeList) {
         }
       }
     );
-    usePermissionStoreHook().handleWholeMenus(routeList);
+    usePermissionStoreHook().handleWholeMenus(asyncRoutes);
   }
   if (!useMultiTagsStoreHook().getMultiTagsCache) {
     useMultiTagsStoreHook().handleTags("equal", [
@@ -305,33 +308,58 @@ function handleAliveRoute({ name }: ToRouteType, mode?: string) {
   }
 }
 
-/** 过滤后端传来的动态路由 重新生成规范路由 */
-function addAsyncRoutes(arrRoutes: Array<RouteRecordRaw>) {
-  if (!arrRoutes || !arrRoutes.length) return;
+/** 过滤后端传来的动态路由 重新生成规范路由（返回过滤后的路由数组，未命中视图文件的叶子会被跳过） */
+function addAsyncRoutes(
+  arrRoutes: Array<RouteRecordRaw>
+): Array<RouteRecordRaw> {
+  if (!arrRoutes || !arrRoutes.length) return [];
   const modulesRoutesKeys = Object.keys(modulesRoutes);
+  const result: Array<RouteRecordRaw> = [];
   arrRoutes.forEach((v: RouteRecordRaw) => {
     // 将backstage属性加入meta，标识此路由为后端返回路由
+    if (!v.meta) v.meta = {} as any;
     v.meta.backstage = true;
-    // 父级的redirect属性取值：如果子级存在且父级的redirect属性不存在，默认取第一个子级的path；如果子级存在且父级的redirect属性存在，取存在的redirect属性，会覆盖默认值
-    if (v?.children && v.children.length && !v.redirect)
-      v.redirect = v.children[0].path;
-    // 父级的name属性取值：如果子级存在且父级的name属性不存在，默认取第一个子级的name；如果子级存在且父级的name属性存在，取存在的name属性，会覆盖默认值（注意：测试中发现父级的name不能和子级name重复，如果重复会造成重定向无效（跳转404），所以这里给父级的name起名的时候后面会自动加上`Parent`，避免重复）
-    if (v?.children && v.children.length && !v.name)
-      v.name = (v.children[0].name as string) + "Parent";
+
+    // 先递归处理子级，父级随后可依据「子级是否为空」决定去留
+    if (v?.children && v.children.length) {
+      v.children = addAsyncRoutes(v.children);
+    }
+
+    // 组件解析：外链 → IFrame；目录（后端契约 component 字面量 "Layout" 或带子级）→ Layout；叶子 → 按 component/path 匹配视图文件
     if (v.meta?.frameSrc) {
       v.component = IFrame;
+    } else if (
+      (v.component as any) === "Layout" ||
+      (v.children && v.children.length)
+    ) {
+      v.component = Layout;
+      // 父级的redirect属性取值：子级存在且父级redirect缺失时默认取第一个子级的path
+      if (!v.redirect) v.redirect = (v.children[0] as RouteRecordRaw).path;
+      // 父级的name属性取值：子级存在且父级name缺失时默认取第一个子级的name并追加`Parent`避免重复
+      if (!v.name) v.name = (v.children[0].name as string) + "Parent";
     } else {
-      // 对后端传component组件路径和不传做兼容（如果后端传component组件路径，那么path可以随便写，如果不传，component组件路径会跟path保持一致）
-      const index = v?.component
-        ? modulesRoutesKeys.findIndex(ev => ev.includes(v.component as any))
-        : modulesRoutesKeys.findIndex(ev => ev.includes(v.path));
-      v.component = modulesRoutes[modulesRoutesKeys[index]];
+      // 对后端传component组件路径和不传做兼容（传则按component匹配，不传则按path匹配）
+      const key = v?.component
+        ? modulesRoutesKeys.find(ev => ev.includes(v.component as any))
+        : modulesRoutesKeys.find(ev => ev.includes(v.path));
+      if (!key) {
+        // 未命中任何视图文件：跳过该叶子，避免 addRoute 挂 undefined 组件导致白屏
+        if (import.meta.env.DEV) {
+          console.warn(
+            `[router] 未找到视图文件，已跳过菜单：component=${v.component} path=${v.path}`
+          );
+        }
+        return;
+      }
+      v.component = modulesRoutes[key];
     }
-    if (v?.children && v.children.length) {
-      addAsyncRoutes(v.children);
-    }
+
+    // 目录经递归后若已无子级（全部被跳过）则不再挂载，避免出现空菜单
+    if (v.children !== undefined && v.children.length === 0) return;
+
+    result.push(v);
   });
-  return arrRoutes;
+  return result;
 }
 
 /** 获取路由历史模式 https://next.router.vuejs.org/zh/guide/essentials/history-mode.html */
