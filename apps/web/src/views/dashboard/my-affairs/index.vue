@@ -7,7 +7,7 @@ import {
   Calendar,
   Clock,
   OfficeBuilding,
-  Flask,
+  MagicStick,
 } from "@element-plus/icons-vue";
 import QuickApplyDrawer from "@/components/QuickApply/Drawer.vue";
 import { schemas, TEACHER_QUICK_ACTIONS } from "@/components/QuickApply/schemas";
@@ -35,7 +35,7 @@ const ICONS: Record<string, unknown> = {
   leaveApply: Calendar,
   scheduleChangeApply: Clock,
   meetingRoomBook: OfficeBuilding,
-  labBook: Flask,
+  labBook: MagicStick,
 };
 
 const actions = computed(() =>
