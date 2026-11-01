@@ -332,6 +332,9 @@ function addAsyncRoutes(
       (v.component as any) === "Layout" ||
       (v.children && v.children.length)
     ) {
+      // 目录经递归后若已无子级（所有叶子均无对应视图文件被跳过）则不再挂载，
+      // 必须先判空再取 v.children[0]，否则空目录会越界抛「Cannot read properties of undefined (reading 'path')」
+      if (!v.children || v.children.length === 0) return;
       v.component = Layout;
       // 父级的redirect属性取值：子级存在且父级redirect缺失时默认取第一个子级的path
       if (!v.redirect) v.redirect = (v.children[0] as RouteRecordRaw).path;
@@ -352,10 +355,11 @@ function addAsyncRoutes(
         return;
       }
       v.component = modulesRoutes[key];
+      // 后端契约叶子也带 children: []，清掉以免菜单渲染误判为目录
+      if (Array.isArray(v.children) && v.children.length === 0) {
+        (v as any).children = undefined;
+      }
     }
-
-    // 目录经递归后若已无子级（全部被跳过）则不再挂载，避免出现空菜单
-    if (v.children !== undefined && v.children.length === 0) return;
 
     result.push(v);
   });
