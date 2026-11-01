@@ -39,11 +39,17 @@ public class DataScopeScanner implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         Map<RequestMappingInfo, HandlerMethod> methods = handlerMapping.getHandlerMethods();
         List<String> missing = new ArrayList<>();
-        int total = methods.size();
+        int total = 0;
         int declared = 0;
 
         for (Map.Entry<RequestMappingInfo, HandlerMethod> e : methods.entrySet()) {
             HandlerMethod hm = e.getValue();
+            // 只扫描业务包（com.school）的 Controller：框架自带的错误处理路由
+            // （如 BasicErrorController#error/errorHtml）不适用「业务数据读写必须声明 @DataScope」约定
+            if (!hm.getBeanType().getPackageName().startsWith("com.school")) {
+                continue;
+            }
+            total++;
             Method m = hm.getMethod();
             boolean hasScope = m.isAnnotationPresent(DataScope.class);
             boolean isPublic = m.isAnnotationPresent(PublicDataScope.class);
