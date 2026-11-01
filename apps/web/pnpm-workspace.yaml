@@ -1,0 +1,19 @@
+# pnpm 12 安装设置（camelCase 键，本文件是 pnpm 12 起唯一的安装设置来源）
+# 注意：pnpm 12 起 .npmrc 只承载 registry/auth，nodeLinker 等安装设置必须写在这里。
+
+# 平铺 node_modules（npm 风格，Windows 下最可靠，避免符号链接/peer 缺失问题）
+nodeLinker: hoisted
+
+# 自动安装 peer 依赖（@vitejs/plugin-vue-jsx 需要 @babel/core 等）
+autoInstallPeers: true
+
+strictPeerDependencies: false
+
+# 允许运行 build/install 脚本的依赖（pnpm 12 默认忽略依赖生命周期脚本）
+allowBuilds:
+  esbuild: true
+  "@parcel/watcher": true
+  vue-demi: true
+  core-js: true
+  es5-ext: true
+  typeit: true
