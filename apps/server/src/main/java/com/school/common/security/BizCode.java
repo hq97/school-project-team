@@ -25,7 +25,10 @@ public enum BizCode {
     SPACE_SCHEDULE_CONFLICT(40901, "该时段已被课表占用，无法预约", 409),
     SPACE_RESERVATION_CONFLICT(40902, "该时段刚被他人预约，请重新选择时段", 409),
     STOCK_SHORT(40903, "库存不足，本次申请未提交", 409),
-    QUOTA_FULL(40904, "名额已满，本次报名未成功", 409);
+    QUOTA_FULL(40904, "名额已满，本次报名未成功", 409),
+
+    /** 通用资源冲突（可重试）：用户名重复 / 菜单有子节点不可删 / 部门非空不可删 / 预置角色不可删等。message 由异常侧覆盖。 */
+    RESOURCE_CONFLICT(40900, "操作冲突，请刷新后重试", 409);
 
     private final int code;
     private final String message;

@@ -82,4 +82,9 @@ public class BizException extends RuntimeException {
     public static BizException quotaFull(Map<String, Object> quota) {
         return new BizException(BizCode.QUOTA_FULL, Map.of("quota", quota));
     }
+
+    /** 通用资源冲突（可重试），携带自定义 message（如「该菜单下存在子菜单，无法删除」）。 */
+    public static BizException conflict(String message) {
+        return new BizException(BizCode.RESOURCE_CONFLICT, null, message);
+    }
 }
