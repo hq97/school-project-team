@@ -38,3 +38,6 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# 临时退出码/验证残留（工具运行时的 exit 记录）
+_*.txt
