@@ -81,13 +81,11 @@ export const schemas: Record<string, QuickSchema> = {
     fields: [
       { key: "assetId", label: "领用物资", type: "asset", required: true, cols: 24, assetType: "MATERIAL", placeholder: "搜索物资名称" },
       { key: "qty", label: "数量", type: "number", required: true, min: 1, max: 999, cols: 12 },
-      { key: "usage", label: "用途", type: "textarea", required: true, cols: 24, placeholder: "如：高三(1)班 期末复习资料印制", max: 100 },
     ],
     submit: (p) =>
       applyMaterial({
         assetId: String(p.assetId),
-        qty: Number(p.qty),
-        usage: String(p.usage ?? ""),
+        quantity: Number(p.qty),
       }),
     successText: (r) => `已提交，单号 ${r.applyNo}，审批结果将发到消息中心`,
     stepText: "2 步：点「物资领用」→ 填写提交",
@@ -102,13 +100,11 @@ export const schemas: Record<string, QuickSchema> = {
     fields: [
       { key: "spaceId", label: "报修位置", type: "space", required: true, cols: 12, spaceType: "CLASSROOM" },
       { key: "faultType", label: "故障类型", type: "select", required: true, cols: 12, dictCode: "DICT-FAULT-TYPE" },
-      { key: "description", label: "问题描述", type: "textarea", required: true, cols: 24, placeholder: "如：讲台上方灯管不亮，影响上课", max: 200 },
     ],
     submit: (p) =>
       submitRepair({
         spaceId: String(p.spaceId),
         faultType: String(p.faultType),
-        description: String(p.description ?? ""),
       }),
     successText: (r) => `已提交，工单号 ${r.ticketNo}，可在「我的报修」跟踪进度`,
     stepText: "2 步：点「报修提交」→ 填写提交",

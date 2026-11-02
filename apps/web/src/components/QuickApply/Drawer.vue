@@ -182,12 +182,12 @@ const cols = (f: FieldDef) => (f.cols === 24 ? "is-full" : "is-half");
                 <el-option
                   v-for="a in assets"
                   :key="a.id"
-                  :label="`${a.name}（可用 ${a.availableQty}${a.unit}）`"
+                  :label="`${a.name}（可用 ${a.availableQty}）`"
                   :value="a.id"
                 />
               </el-select>
               <div v-if="selectedAsset" class="qa__tip">
-                库存可用 {{ selectedAsset.availableQty }}{{ selectedAsset.unit }}<template v-if="selectedAsset.location"> · {{ selectedAsset.location }}</template>
+                库存可用 {{ selectedAsset.availableQty }}<template v-if="selectedAsset.location"> · {{ selectedAsset.location }}</template>
               </div>
             </el-form-item>
 
@@ -196,9 +196,9 @@ const cols = (f: FieldDef) => (f.cols === 24 ? "is-full" : "is-half");
               <el-select v-model="form[f.key]" placeholder="请选择" filterable class="qa__ctl">
                 <el-option
                   v-for="s in spaces"
-                  :key="s.spaceId"
+                  :key="s.id"
                   :label="`${s.spaceName}（${s.capacity}人）`"
-                  :value="s.spaceId"
+                  :value="s.id"
                 />
               </el-select>
             </el-form-item>

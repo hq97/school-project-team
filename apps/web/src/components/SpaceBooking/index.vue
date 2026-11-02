@@ -53,7 +53,7 @@ const keyOf = (d: number, p: number) => `${d}-${p}`;
 
 async function loadSpaces() {
   spaces.value = await listSpaces(props.spaceType);
-  if (spaces.value.length && !spaceId.value) spaceId.value = spaces.value[0].spaceId;
+  if (spaces.value.length && !spaceId.value) spaceId.value = spaces.value[0].id;
 }
 
 /** 占用查询：GET /api/spaces/:id/occupancies?week=N（服务端已过滤 + 不含占用人身份） */
@@ -87,7 +87,7 @@ function pickCell(d: number, p: number) {
       </div>
       <div class="sb__ops">
         <el-select v-model="spaceId" placeholder="选择场地" style="width: 200px">
-          <el-option v-for="s in spaces" :key="s.spaceId" :label="s.spaceName" :value="s.spaceId" />
+          <el-option v-for="s in spaces" :key="s.id" :label="s.spaceName" :value="s.id" />
         </el-select>
         <el-select v-model="week" placeholder="周次" style="width: 120px">
           <el-option v-for="w in 20" :key="w" :label="`第 ${w} 周`" :value="w" />

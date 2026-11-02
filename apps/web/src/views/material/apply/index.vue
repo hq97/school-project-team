@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { Search } from "@element-plus/icons-vue";
 import QuickApplyDrawer from "@/components/QuickApply/Drawer.vue";
 import { schemas } from "@/components/QuickApply/schemas";
@@ -24,10 +24,17 @@ const loading = ref(false);
 const drawer = ref(false);
 const schema = schemas.materialApply;
 
+/** 前端本地过滤（后端 /api/material/assets 不接 keyword，物资量小，本地过滤即可） */
+const filteredAssets = computed(() => {
+  const k = keyword.value.trim();
+  if (!k) return assets.value;
+  return assets.value.filter((a) => a.name.includes(k));
+});
+
 async function load() {
   loading.value = true;
   try {
-    assets.value = await listAssets("MATERIAL", keyword.value);
+    assets.value = await listAssets("MATERIAL");
   } finally {
     loading.value = false;
   }
@@ -58,7 +65,7 @@ function openApply(asset: AssetItem) {
     </header>
 
     <div v-loading="loading" class="ma__grid">
-      <article v-for="a in assets" :key="a.id" class="ma__card sa-card">
+      <article v-for="a in filteredAssets" :key="a.id" class="ma__card sa-card">
         <div class="ma__card-hd">
           <h3 class="ma__name">{{ a.name }}</h3>
           <el-tag
@@ -67,7 +74,7 @@ function openApply(asset: AssetItem) {
             effect="light"
             round
           >
-            {{ a.availableQty === 0 ? "无库存" : `可用 ${a.availableQty}${a.unit}` }}
+            {{ a.availableQty === 0 ? "无库存" : `可用 ${a.availableQty} 件` }}
           </el-tag>
         </div>
         <p class="ma__loc">{{ a.location || "—" }}</p>
@@ -85,7 +92,7 @@ function openApply(asset: AssetItem) {
         </div>
       </article>
 
-      <el-empty v-if="!loading && assets.length === 0" description="没有可领用的物资" />
+      <el-empty v-if="!loading && filteredAssets.length === 0" description="没有可领用的物资" />
     </div>
 
     <QuickApplyDrawer v-model="drawer" :schema="schema" :prefill="prefill" />

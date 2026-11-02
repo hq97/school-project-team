@@ -145,7 +145,7 @@ export type DictCode =
   | "DICT-DISC-TYPE"
   | "DICT-SPACE-TYPE";
 
-/** 统一资产台账（asset，域隔离：assetType × 借用权限点） */
+/** 统一资产台账（asset，域隔离：assetType × 借用权限点）——后端 assetView 字段 */
 export interface AssetItem {
   id: string;
   name: string;
@@ -153,20 +153,61 @@ export interface AssetItem {
   assetType: AssetType;
   /** 可用库存（服务端实时值，前端不本地扣减；**全链路不经缓存**） */
   availableQty: number;
-  unit: string;
+  /** 总库存 */
+  quantity: number;
   location?: string;
-  /** 在库 / 借出 / 报修 / 报废 */
-  status: AssetStatus;
+  /** 借用域（SELF/GRADE/ALL） */
+  borrowDomain?: string;
 }
 
-/** 场地（space，组织型归属） */
+/** 场地（space，组织型归属）——后端 spaceView 字段 */
 export interface SpaceItem {
-  spaceId: string;
+  id: string;
   spaceName: string;
   spaceType: SpaceType;
   capacity: number;
   /** 可用 / 停用 / 维修中 */
   status: SpaceStatus;
+  /** 开放范围 */
+  openScope?: string;
+}
+
+/** 报修工单（后端 RepairService.view 字段） */
+export type RepairTicket = {
+  id: string;
+  ticketNo: string;
+  reporterId: string;
+  reporterDeptId?: string;
+  spaceId: string;
+  faultType: string;
+  termId?: string;
+  status: string;
+  assignedTo?: string;
+  assignedAt?: string;
+  completedAt?: string;
+  createdAt?: string;
+};
+
+/** 物资领用申请（后端 MaterialService.view 字段） */
+export type MaterialRequisition = {
+  id: string;
+  applyNo: string;
+  applicantId: string;
+  applicantDeptId?: string;
+  assetId: string;
+  quantity: number;
+  termId?: string;
+  status: string;
+  createdAt?: string;
+  /** 审批进度（后端附带） */
+  flow?: unknown;
+};
+
+/** 报修响应统计（M0404） */
+export interface RepairStats {
+  avgResponseSeconds: number;
+  overdueCount: number;
+  overdueTickets: RepairTicket[];
 }
 
 /** 时段格（周次 + 星期 + 节次） */

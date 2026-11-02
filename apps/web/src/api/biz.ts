@@ -3,7 +3,10 @@ import type {
   AssetItem,
   BizError,
   BizErrorCode,
+  MaterialRequisition,
   OccupancyState,
+  RepairStats,
+  RepairTicket,
   SpaceItem,
   StatDim,
   TimeSlot,
@@ -11,37 +14,43 @@ import type {
 
 /** 统一业务接口（物资 / 报修 / 场地预约 / 请假 / 调课） */
 
+/** 后端统一响应体 */
+type ApiResp<T> = { success: boolean; data: T };
+
+/** 解包：http.request 返回 response.data（envelope），本层统一取 .data 返回 payload */
+const unwrap = <T>(p: Promise<ApiResp<T>>): Promise<T> => p.then(r => r.data);
+
 /**
  * 字典项只读消费（DICT-FAULT-TYPE / DICT-LEAVE-TYPE 等）
  * 注意：字典（M0505）是平台级配置，维护权仅 R-ADMIN；
  * 这里只是把字典项当作下拉选项来读，符合 AC-DD5-2——字典不得作为大屏指标或下钻明细。
  */
 export function listDictItems(dictCode: string) {
-  return http.request<{ label: string; value: string }[]>("get", "/api/dicts/items", {
-    params: { dictCode },
-  });
+  return unwrap(
+    http.request<ApiResp<{ label: string; value: string }[]>>("get", "/api/dicts/items", {
+      params: { dictCode },
+    })
+  );
 }
 
-/** 可领用资产列表（全校共享 asset，按 assetType 域隔离，服务端过滤） */
-export function listAssets(assetType: AssetItem["assetType"], keyword = "") {
-  return http.request<AssetItem[]>("get", "/api/assets", {
-    params: { assetType, keyword },
-  });
+/** 可领用资产列表（M0301，全校共享 asset，服务端过滤 IN_STOCK + availableQty>0） */
+export function listAssets(_assetType?: AssetItem["assetType"]) {
+  return unwrap(http.request<ApiResp<AssetItem[]>>("get", "/api/material/assets"));
 }
 
-/** 可预约场地列表（space 组织型归属，服务端按开放范围过滤，越权 40303） */
-export function listSpaces(spaceType: SpaceItem["spaceType"]) {
-  return http.request<SpaceItem[]>("get", "/api/spaces", {
-    params: { spaceType },
-  });
+/** 可报修/预约场地列表（M0401，space 组织型归属，服务端按开放范围过滤） */
+export function listSpaces(_spaceType?: SpaceItem["spaceType"]) {
+  return unwrap(http.request<ApiResp<SpaceItem[]>>("get", "/api/repair/spaces"));
 }
 
 /** 场地空闲时段查询：服务端已排除排课占用 + 按开放范围过滤，返回可预约时段 */
 export function listFreeSlots(spaceId: string, week: number) {
-  return http.request<{ slot: TimeSlot; slotText: string }[]>(
-    "get",
-    `/api/spaces/${spaceId}/free-slots`,
-    { params: { week } }
+  return unwrap(
+    http.request<ApiResp<{ slot: TimeSlot; slotText: string }[]>>(
+      "get",
+      `/api/spaces/${spaceId}/free-slots`,
+      { params: { week } }
+    )
   );
 }
 
@@ -50,34 +59,75 @@ export function listFreeSlots(spaceId: string, week: number) {
  * 服务端已按请求人数据范围过滤，且**不下发占用人身份**（越权红线）。
  */
 export function listOccupancies(spaceId: string, week: number) {
-  return http.request<Record<string, OccupancyState>>(
-    "get",
-    `/api/spaces/${spaceId}/occupancies`,
-    { params: { week } }
+  return unwrap(
+    http.request<ApiResp<Record<string, OccupancyState>>>(
+      "get",
+      `/api/spaces/${spaceId}/occupancies`,
+      { params: { week } }
+    )
   );
 }
 
-/** 物资领用申请（BTN-MAT-APPLY） */
-export function applyMaterial(payload: {
-  assetId: string;
-  qty: number;
-  usage: string;
-}) {
-  return http.request<{ applyNo: string }>("post", "/api/material/apply", {
-    data: payload,
-  });
+/** 物资领用申请（BTN-MAT-APPLY，M0301）：POST /api/material/requisitions */
+export function applyMaterial(payload: { assetId: string; quantity: number }) {
+  return unwrap(
+    http.request<ApiResp<MaterialRequisition>>("post", "/api/material/requisitions", {
+      data: payload,
+    })
+  );
 }
 
-/** 报修提交（BTN-REP-SUBMIT） */
-export function submitRepair(payload: {
-  spaceId: string;
-  faultType: string;
-  description: string;
-  photoIds?: string[];
-}) {
-  return http.request<{ ticketNo: string }>("post", "/api/repair/submit", {
-    data: payload,
-  });
+/** 报修提交（BTN-REP-SUBMIT，M0401）：POST /api/repair/tickets */
+export function submitRepair(payload: { spaceId: string; faultType: string }) {
+  return unwrap(
+    http.request<ApiResp<RepairTicket>>("post", "/api/repair/tickets", {
+      data: payload,
+    })
+  );
+}
+
+/** 我的报修（M0402，forceSelf） */
+export function listMyRepairTickets() {
+  return unwrap(http.request<ApiResp<RepairTicket[]>>("get", "/api/repair/tickets/my"));
+}
+
+/** 报修工单列表（M0403，后勤处理视角，可 status 过滤） */
+export function listRepairTickets(status?: string) {
+  return unwrap(
+    http.request<ApiResp<RepairTicket[]>>("get", "/api/repair/tickets", {
+      params: { status },
+    })
+  );
+}
+
+/** 分派维修人（BTN-REP-ASSIGN，M0403）：PENDING → ASSIGNED */
+export function assignRepair(id: string, assignedTo: string) {
+  return unwrap(
+    http.request<ApiResp<RepairTicket>>("put", `/api/repair/tickets/${id}/assign`, {
+      data: { assignedTo },
+    })
+  );
+}
+
+/** 更新工单状态（BTN-REP-STATUS，M0403）：ASSIGNED → PROCESSING → COMPLETED / CANCELLED */
+export function updateRepairStatus(id: string, status: string) {
+  return unwrap(
+    http.request<ApiResp<RepairTicket>>("put", `/api/repair/tickets/${id}/status`, {
+      data: { status },
+    })
+  );
+}
+
+/** 报修响应统计（M0404） */
+export function repairStats() {
+  return unwrap(http.request<ApiResp<RepairStats>>("get", "/api/repair/stats"));
+}
+
+/** 我的物资申请（M0302，forceSelf） */
+export function listMyRequisitions() {
+  return unwrap(
+    http.request<ApiResp<MaterialRequisition[]>>("get", "/api/material/requisitions/my")
+  );
 }
 
 /** 请假申请（BTN-LEAVE-APPLY，M0901） */
@@ -86,9 +136,11 @@ export function applyLeave(payload: {
   days: number;
   reason: string;
 }) {
-  return http.request<{ applyNo: string }>("post", "/api/leave/apply", {
-    data: payload,
-  });
+  return unwrap(
+    http.request<ApiResp<{ applyNo: string }>>("post", "/api/leave/apply", {
+      data: payload,
+    })
+  );
 }
 
 /** 调课 / 代课申请（BTN-SCH-CHANGE-APPLY，M0801） */
@@ -97,9 +149,11 @@ export function applyScheduleChange(payload: {
   periods: number;
   remark?: string;
 }) {
-  return http.request<{ applyNo: string }>("post", "/api/schedule-change/apply", {
-    data: payload,
-  });
+  return unwrap(
+    http.request<ApiResp<{ applyNo: string }>>("post", "/api/schedule-change/apply", {
+      data: payload,
+    })
+  );
 }
 
 /** 场地预约（会议室 / 实验室 / 体育场地）：可能触发 40901 / 40902 */
@@ -109,10 +163,12 @@ export function bookSpace(payload: {
   subject: string;
   attendeeCount: number;
 }) {
-  return http.request<{ bookingId: string }>(
-    "post",
-    `/api/spaces/${payload.spaceId}/occupancies`,
-    { data: payload }
+  return unwrap(
+    http.request<ApiResp<{ bookingId: string }>>(
+      "post",
+      `/api/spaces/${payload.spaceId}/occupancies`,
+      { data: payload }
+    )
   );
 }
 
