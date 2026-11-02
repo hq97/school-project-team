@@ -20,7 +20,7 @@ const schema = schemas.scheduleChangeApply;
         <h3>发起调课 / 代课</h3>
         <p class="sc__desc">选原因 + 涉及节次 + 说明，提交后自动生成审批单。</p>
       </div>
-      <el-button v-auth="schema.btnCode" type="primary" size="large" @click="drawer = true">
+      <el-button v-perms="schema.btnCode" type="primary" size="large" @click="drawer = true">
         调课 / 代课申请
       </el-button>
     </section>

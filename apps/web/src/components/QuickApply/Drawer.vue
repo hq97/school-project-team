@@ -276,7 +276,7 @@ const cols = (f: FieldDef) => (f.cols === 24 ? "is-full" : "is-half");
       <div class="qa__footer">
         <el-button @click="close">取消</el-button>
         <el-button
-          v-auth="schema.btnCode"
+          v-perms="schema.btnCode"
           type="primary"
           size="large"
           :loading="submitting"

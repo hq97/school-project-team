@@ -20,7 +20,7 @@ const schema = schemas.repairSubmit;
         <h3>哪儿坏了？</h3>
         <p class="rp__desc">选位置 + 故障类型 + 一句话描述，提交即生成工单号。</p>
       </div>
-      <el-button v-auth="schema.btnCode" type="primary" size="large" @click="drawer = true">
+      <el-button v-perms="schema.btnCode" type="primary" size="large" @click="drawer = true">
         提交报修
       </el-button>
     </section>

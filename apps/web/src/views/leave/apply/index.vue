@@ -20,7 +20,7 @@ const schema = schemas.leaveApply;
         <h3>发起请假</h3>
         <p class="lv__desc">选类型 + 天数 + 事由，提交后由审批人处理。</p>
       </div>
-      <el-button v-auth="schema.btnCode" type="primary" size="large" @click="drawer = true">
+      <el-button v-perms="schema.btnCode" type="primary" size="large" @click="drawer = true">
         请假申请
       </el-button>
     </section>

@@ -81,7 +81,7 @@ function openApply(asset: AssetItem) {
         <div class="ma__card-ft">
           <!-- 第 1 步：直接领用。无库存时禁用，避免用户点了必然失败 -->
           <el-button
-            v-auth="schema.btnCode"
+            v-perms="schema.btnCode"
             type="primary"
             size="large"
             :disabled="a.availableQty === 0"

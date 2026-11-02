@@ -68,7 +68,7 @@ function open(code: string) {
         <button
           v-for="a in actions"
           :key="a.code"
-          v-auth="a.btnCode"
+          v-perms="a.btnCode"
           class="wb__card sa-card"
           type="button"
           @click="open(a.code)"
