@@ -7,7 +7,6 @@ import com.school.common.security.RequireMenu;
 import com.school.common.web.ApiResponse;
 import com.school.repair.dto.FaultTypeCreateRequest;
 import com.school.repair.dto.FaultTypeUpdateRequest;
-import com.school.repair.dto.RepairFlowUpdateRequest;
 import com.school.repair.dto.SpaceCreateRequest;
 import com.school.repair.dto.SpaceUpdateRequest;
 import com.school.repair.service.RepairConfigService;
@@ -26,7 +25,8 @@ import java.util.Map;
 
 /**
  * 报修配置（M0405，仅后勤角色 R-LOGISTICS 可维护）。独立于 R-ADMIN 专属的
- * 字典管理(M0505)与流程模板管理(M0507)，只操作报修相关数据（故障类型 / 场地 / 审批流程）。
+ * 字典管理(M0505)，只操作报修相关数据（故障类型 / 场地）。审批流程配置入口回归 M0507
+ * 流程模板管理，本控制器不再提供流程写入端点。
  *
  * <p>配置均为平台级（PUBLIC）数据，仅菜单/按钮权限控制，不做记录级过滤；列表读取
  * 仍经 ScopeQueryBuilder 唯一出口注入（PUBLIC 下为空范围），写操作挂 BTN-REP-CONFIG。</p>
@@ -100,14 +100,5 @@ public class RepairConfigController {
     public Map<String, Object> deleteSpace(@PathVariable String id) {
         service.deleteSpace(id);
         return ApiResponse.ok(null);
-    }
-
-    // ---- 报修审批流程 ----
-
-    @DataScope(resource = "flow_template", ownership = OwnershipType.PUBLIC)
-    @RequireButton("BTN-REP-CONFIG")
-    @PutMapping("/flow")
-    public Map<String, Object> updateFlow(@RequestBody RepairFlowUpdateRequest req) {
-        return ApiResponse.ok(service.updateFlow(req));
     }
 }

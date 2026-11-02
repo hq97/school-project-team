@@ -208,6 +208,35 @@ public class FlowEngineService {
         return instanceView(instanceMapper.selectById(inst.getId()));
     }
 
+    /**
+     * 按业务类型 + 业务主键审批（业务侧分派/推进入口）。
+     *
+     * <p>定位该业务下仍 PENDING 的实例（LIMIT 1）→ 命中当前节点且未处理的 task →
+     * 委托 {@link #approve(String, String, String, Principal)} 走完整双校验 + 流转 + 回调。
+     * 实例缺失或已结束（非 PENDING）抛 409，防止业务侧在流程已终结后误推进。</p>
+     */
+    @Transactional
+    public Map<String, Object> approveByBusiness(String businessType, String businessId,
+                                                 String action, String comment, Principal approver) {
+        FlowInstance inst = instanceMapper.selectOne(
+                new LambdaQueryWrapper<FlowInstance>()
+                        .eq(FlowInstance::getBusinessType, businessType)
+                        .eq(FlowInstance::getBusinessId, businessId)
+                        .last("LIMIT 1"));
+        if (inst == null || !"PENDING".equals(inst.getStatus())) {
+            throw BizException.conflict("流程不存在或已结束，无法审批");
+        }
+        FlowTask task = taskMapper.selectOne(
+                new LambdaQueryWrapper<FlowTask>()
+                        .eq(FlowTask::getInstanceId, inst.getId())
+                        .eq(FlowTask::getSeq, inst.getCurrentSeq())
+                        .isNull(FlowTask::getConclusion));
+        if (task == null) {
+            throw BizException.conflict("当前节点无待审批任务");
+        }
+        return approve(task.getId(), action, comment, approver);
+    }
+
     /** 查询实例（供业务侧查询审批进度）。 */
     public Map<String, Object> instance(String instanceId) {
         FlowInstance inst = instanceMapper.selectById(instanceId);

@@ -1,5 +1,6 @@
 package com.school.repair.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.school.asset.entity.Space;
 import com.school.asset.mapper.SpaceMapper;
@@ -11,9 +12,15 @@ import com.school.common.security.CurrentPrincipal;
 import com.school.common.util.Ids;
 import com.school.repair.dto.RepairTicketAssignRequest;
 import com.school.repair.dto.RepairTicketCreateRequest;
-import com.school.repair.dto.RepairTicketStatusRequest;
 import com.school.repair.entity.RepairTicket;
 import com.school.repair.mapper.RepairTicketMapper;
+import com.school.system.entity.SysRole;
+import com.school.system.entity.SysUser;
+import com.school.system.entity.UserRole;
+import com.school.system.mapper.SysRoleMapper;
+import com.school.system.mapper.SysUserMapper;
+import com.school.system.mapper.UserRoleMapper;
+import com.school.workflow.service.FlowEngineService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,20 +32,32 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 报修工单（自有状态机，不走审批流）。
+ * 报修工单（接入审批流引擎，businessType=repair）。
  *
  * <p>数据范围：ORG（ownerField=reporterId / deptField=reporterDeptId / termField=termId）。
- * 状态机：PENDING → ASSIGNED → PROCESSING → COMPLETED，另有 CANCELLED。</p>
+ * 生命周期：提交即启动 flow 实例 →「分派维修人」= FT-REPAIR 节点1（R-LOGISTICS）审批
+ * →「维修处理」= 节点2（R-REPAIRMAN）审批 → 终审通过由 {@link RepairApprovalHandler} 回写 COMPLETED。</p>
  */
 @Service
 public class RepairService {
 
+    private static final String ROLE_REPAIRMAN = "R-REPAIRMAN";
+
     private final RepairTicketMapper mapper;
     private final SpaceMapper spaceMapper;
+    private final FlowEngineService flowEngine;
+    private final SysRoleMapper roleMapper;
+    private final SysUserMapper userMapper;
+    private final UserRoleMapper userRoleMapper;
 
-    public RepairService(RepairTicketMapper mapper, SpaceMapper spaceMapper) {
+    public RepairService(RepairTicketMapper mapper, SpaceMapper spaceMapper, FlowEngineService flowEngine,
+                         SysRoleMapper roleMapper, SysUserMapper userMapper, UserRoleMapper userRoleMapper) {
         this.mapper = mapper;
         this.spaceMapper = spaceMapper;
+        this.flowEngine = flowEngine;
+        this.roleMapper = roleMapper;
+        this.userMapper = userMapper;
+        this.userRoleMapper = userRoleMapper;
     }
 
     /** 可选场地列表（PUBLIC，仅菜单控制）。 */
@@ -49,7 +68,28 @@ public class RepairService {
         return spaceMapper.selectList(qw).stream().map(this::spaceView).toList();
     }
 
-    /** 提交报修（≤3 步）：写入 reporterId=当前用户、reporterDeptId=主部门、termId=当前学期，status=PENDING。 */
+    /** 维修人员下拉（R-REPAIRMAN 角色下的用户，PUBLIC，供 M0403 分派使用）。 */
+    public List<Map<String, Object>> repairmen() {
+        SysRole role = roleMapper.selectOne(
+                new LambdaQueryWrapper<SysRole>().eq(SysRole::getCode, ROLE_REPAIRMAN));
+        if (role == null) {
+            return List.of();
+        }
+        List<UserRole> links = userRoleMapper.selectList(
+                new LambdaQueryWrapper<UserRole>().eq(UserRole::getRoleId, role.getId()));
+        if (links.isEmpty()) {
+            return List.of();
+        }
+        List<String> userIds = links.stream().map(UserRole::getUserId).distinct().toList();
+        List<SysUser> users = userMapper.selectList(
+                new LambdaQueryWrapper<SysUser>().in(SysUser::getId, userIds));
+        return users.stream().map(this::repairmanView).toList();
+    }
+
+    /**
+     * 提交报修（≤3 步）：写入 reporterId=当前用户、reporterDeptId=主部门、termId=当前学期，
+     * status=PENDING，随后启动审批流实例。
+     */
     @Transactional
     public Map<String, Object> submit(RepairTicketCreateRequest req) {
         Principal p = CurrentPrincipal.require();
@@ -65,18 +105,26 @@ public class RepairService {
         e.setStatus("PENDING");
         e.setCreatedAt(OffsetDateTime.now());
         mapper.insert(e);
+        flowEngine.start("repair", e.getId(), p.userId());
         return view(e);
     }
 
-    /** 我的报修（forceSelf）。 */
+    /** 我的报修（forceSelf），带审批进度。 */
     public List<Map<String, Object>> my(HttpServletRequest request) {
         QueryWrapper<RepairTicket> qw = new QueryWrapper<>();
         ScopeWrapper.apply(qw, ScopeQueryBuilder.fromRequest(request).buildWhere(null));
         qw.orderByDesc("\"createdAt\"");
-        return mapper.selectList(qw).stream().map(this::view).toList();
+        List<RepairTicket> list = mapper.selectList(qw);
+        Map<String, Map<String, Object>> flows = flowEngine.instancesByBusiness(
+                "repair", list.stream().map(RepairTicket::getId).toList());
+        return list.stream().map(e -> {
+            Map<String, Object> v = view(e);
+            v.put("flow", flows.get(e.getId()));
+            return v;
+        }).toList();
     }
 
-    /** 工单列表（后勤处理视角，按范围过滤，可选 status 过滤）。 */
+    /** 工单列表（后勤处理视角，按范围过滤，可选 status 过滤），带审批进度。 */
     public List<Map<String, Object>> list(HttpServletRequest request, String status) {
         Map<String, Object> extra = new HashMap<>();
         if (status != null && !status.isEmpty()) {
@@ -85,44 +133,43 @@ public class RepairService {
         QueryWrapper<RepairTicket> qw = new QueryWrapper<>();
         ScopeWrapper.apply(qw, ScopeQueryBuilder.fromRequest(request).buildWhere(extra));
         qw.orderByDesc("\"createdAt\"");
-        return mapper.selectList(qw).stream().map(this::view).toList();
+        List<RepairTicket> list = mapper.selectList(qw);
+        Map<String, Map<String, Object>> flows = flowEngine.instancesByBusiness(
+                "repair", list.stream().map(RepairTicket::getId).toList());
+        return list.stream().map(e -> {
+            Map<String, Object> v = view(e);
+            v.put("flow", flows.get(e.getId()));
+            return v;
+        }).toList();
     }
 
-    /** 分派维修人：PENDING → ASSIGNED。 */
+    /**
+     * 分派维修人（= 审批 FT-REPAIR 节点1）：
+     * 校验工单 PENDING + 维修人确为 R-REPAIRMAN → 落 assignedTo/assignedAt/status=ASSIGNED
+     * → 以当前登录人（R-LOGISTICS）通过节点1，流转至节点2（维修处理）。
+     */
     @Transactional
     public Map<String, Object> assign(HttpServletRequest request, String id, RepairTicketAssignRequest req) {
+        Principal p = CurrentPrincipal.require();
         RepairTicket e = requireTicket(request, id);
         if (!"PENDING".equals(e.getStatus())) {
             throw BizException.conflict("仅待分派工单可分派");
         }
-        e.setAssignedTo(req.assignedTo());
+        assertRepairman(req.repairmanId());
+        e.setAssignedTo(req.repairmanId());
         e.setAssignedAt(OffsetDateTime.now());
         e.setStatus("ASSIGNED");
         mapper.updateById(e);
+        flowEngine.approveByBusiness("repair", id, "APPROVE", null, p);
         return view(e);
     }
 
-    /** 更新工单状态：ASSIGNED → PROCESSING → COMPLETED（或 CANCELLED）。 */
-    @Transactional
-    public Map<String, Object> updateStatus(HttpServletRequest request, String id, RepairTicketStatusRequest req) {
-        RepairTicket e = requireTicket(request, id);
-        String from = e.getStatus();
-        String to = req.status();
-        if (!validTransition(from, to)) {
-            throw BizException.conflict("工单状态不允许从 " + from + " 流转到 " + to);
-        }
-        e.setStatus(to);
-        if ("COMPLETED".equals(to)) {
-            e.setCompletedAt(OffsetDateTime.now());
-        }
-        mapper.updateById(e);
-        return view(e);
-    }
-
-    /** 工单详情：matchRecord 判归属，不通过抛 40304 防枚举。 */
+    /** 工单详情：matchRecord 判归属，不通过抛 40304 防枚举；带审批进度。 */
     public Map<String, Object> detail(HttpServletRequest request, String id) {
         RepairTicket e = requireTicket(request, id);
-        return view(e);
+        Map<String, Object> v = view(e);
+        v.put("flow", flowEngine.instanceByBusiness("repair", id));
+        return v;
     }
 
     /** 报修响应统计（M0404）：平均响应时长（秒）+ 超时未处理清单，按范围过滤。 */
@@ -152,6 +199,24 @@ public class RepairService {
         return out;
     }
 
+    private void assertRepairman(String userId) {
+        if (userId == null || userId.isBlank()) {
+            throw BizException.conflict("维修人不能为空");
+        }
+        SysRole role = roleMapper.selectOne(
+                new LambdaQueryWrapper<SysRole>().eq(SysRole::getCode, ROLE_REPAIRMAN));
+        if (role == null) {
+            throw BizException.conflict("维修人员角色不存在：" + ROLE_REPAIRMAN);
+        }
+        Long cnt = userRoleMapper.selectCount(
+                new LambdaQueryWrapper<UserRole>()
+                        .eq(UserRole::getUserId, userId)
+                        .eq(UserRole::getRoleId, role.getId()));
+        if (cnt == null || cnt == 0) {
+            throw BizException.conflict("指定用户不是维修人员（" + ROLE_REPAIRMAN + "）");
+        }
+    }
+
     private RepairTicket requireTicket(HttpServletRequest request, String id) {
         RepairTicket e = mapper.selectById(id);
         if (e == null) {
@@ -162,17 +227,6 @@ public class RepairService {
             throw BizException.notFound();
         }
         return e;
-    }
-
-    private boolean validTransition(String from, String to) {
-        if ("CANCELLED".equals(to)) {
-            return !"COMPLETED".equals(from) && !"CANCELLED".equals(from);
-        }
-        return switch (from) {
-            case "ASSIGNED" -> "PROCESSING".equals(to) || "COMPLETED".equals(to);
-            case "PROCESSING" -> "COMPLETED".equals(to);
-            default -> false;
-        };
     }
 
     private Map<String, Object> view(RepairTicket e) {
@@ -201,6 +255,14 @@ public class RepairService {
         m.put("capacity", s.getCapacity());
         m.put("status", s.getStatus());
         m.put("openScope", s.getOpenScope());
+        return m;
+    }
+
+    private Map<String, Object> repairmanView(SysUser u) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", u.getId());
+        m.put("username", u.getUsername());
+        m.put("realName", u.getRealName());
         return m;
     }
 

@@ -12,16 +12,12 @@ import com.school.common.security.BizException;
 import com.school.common.util.Ids;
 import com.school.repair.dto.FaultTypeCreateRequest;
 import com.school.repair.dto.FaultTypeUpdateRequest;
-import com.school.repair.dto.RepairFlowNodeRequest;
-import com.school.repair.dto.RepairFlowUpdateRequest;
 import com.school.repair.dto.SpaceCreateRequest;
 import com.school.repair.dto.SpaceUpdateRequest;
 import com.school.repair.entity.RepairTicket;
 import com.school.repair.mapper.RepairTicketMapper;
 import com.school.system.entity.SysDict;
-import com.school.system.entity.SysRole;
 import com.school.system.mapper.SysDictMapper;
-import com.school.system.mapper.SysRoleMapper;
 import com.school.workflow.entity.FlowNode;
 import com.school.workflow.entity.FlowTemplate;
 import com.school.workflow.mapper.FlowNodeMapper;
@@ -36,8 +32,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 报修配置（故障类型 / 报修场地 / 审批流程）。独立于 R-ADMIN 专属的字典管理(M0505)与
- * 流程模板管理(M0507)，供后勤角色 R-LOGISTICS 通过独立菜单 M0405 + 按钮 BTN-REP-CONFIG 维护。
+ * 报修配置（故障类型 / 报修场地）。独立于 R-ADMIN 专属的字典管理(M0505)，供后勤角色
+ * R-LOGISTICS 通过独立菜单 M0405 + 按钮 BTN-REP-CONFIG 维护。审批流程配置入口回归 M0507
+ * 流程模板管理（本服务仅保留 FT-REPAIR 只读节点链查询，供报修提交页 M0401 展示）。
  *
  * <p>配置均为平台级数据（PUBLIC，不做记录级过滤），但列表仍统一走
  * {@link ScopeQueryBuilder} + {@link ScopeWrapper} 唯一出口——PUBLIC 归属下 buildWhere 返回空范围，
@@ -48,7 +45,6 @@ public class RepairConfigService {
 
     private static final String DICT_FAULT_TYPE = "DICT-FAULT-TYPE";
     private static final String FLOW_CODE = "FT-REPAIR";
-    private static final String FLOW_BIZ_TYPE = "repair";
 
     private static final List<String> SPACE_TYPES = List.of("CLASSROOM", "LAB", "MEETING_ROOM", "SPORT_VENUE");
     private static final List<String> SPACE_STATUSES = List.of("AVAILABLE", "DISABLED", "REPAIRING");
@@ -60,19 +56,16 @@ public class RepairConfigService {
     private final RepairTicketMapper repairTicketMapper;
     private final FlowTemplateMapper templateMapper;
     private final FlowNodeMapper nodeMapper;
-    private final SysRoleMapper roleMapper;
 
     public RepairConfigService(SysDictMapper dictMapper, SpaceMapper spaceMapper,
                                SpaceOccupancyMapper spaceOccupancyMapper, RepairTicketMapper repairTicketMapper,
-                               FlowTemplateMapper templateMapper, FlowNodeMapper nodeMapper,
-                               SysRoleMapper roleMapper) {
+                               FlowTemplateMapper templateMapper, FlowNodeMapper nodeMapper) {
         this.dictMapper = dictMapper;
         this.spaceMapper = spaceMapper;
         this.spaceOccupancyMapper = spaceOccupancyMapper;
         this.repairTicketMapper = repairTicketMapper;
         this.templateMapper = templateMapper;
         this.nodeMapper = nodeMapper;
-        this.roleMapper = roleMapper;
     }
 
     // ==================== 故障类型（DICT-FAULT-TYPE） ====================
@@ -194,7 +187,7 @@ public class RepairConfigService {
         spaceMapper.deleteById(id);
     }
 
-    // ==================== 报修审批流程（FT-REPAIR） ====================
+    // ==================== 报修审批流程（FT-REPAIR，只读） ====================
 
     /** 读取 FT-REPAIR 模板节点链（报修提交页 M0401 使用；无模板时返回空 nodes）。 */
     public Map<String, Object> flow() {
@@ -203,63 +196,7 @@ public class RepairConfigService {
         return flowView(tpl);
     }
 
-    /** 按数组顺序重建 FT-REPAIR 模板节点（seq 从 1 递增）。 */
-    @Transactional
-    public Map<String, Object> updateFlow(RepairFlowUpdateRequest req) {
-        FlowTemplate tpl = templateMapper.selectOne(
-                new LambdaQueryWrapper<FlowTemplate>().eq(FlowTemplate::getCode, FLOW_CODE));
-        if (tpl == null) {
-            tpl = new FlowTemplate();
-            tpl.setId(Ids.next("flowtpl"));
-            tpl.setCode(FLOW_CODE);
-            tpl.setName("报修处理");
-            tpl.setBusinessType(FLOW_BIZ_TYPE);
-            tpl.setEnabled(true);
-            tpl.setVersion(1);
-            tpl.setRejectPolicy("RETURN");
-            templateMapper.insert(tpl);
-        }
-
-        List<RepairFlowNodeRequest> nodes = validateNodes(req.nodes());
-        nodeMapper.delete(new LambdaQueryWrapper<FlowNode>().eq(FlowNode::getTemplateId, tpl.getId()));
-        for (int i = 0; i < nodes.size(); i++) {
-            RepairFlowNodeRequest d = nodes.get(i);
-            FlowNode node = new FlowNode();
-            node.setId(Ids.next("fnode"));
-            node.setTemplateId(tpl.getId());
-            node.setSeq(i + 1);
-            node.setName(d.name());
-            node.setApproveRole(d.approveRole());
-            node.setTimeoutHours(d.timeoutHours());
-            node.setNodeType("LINEAR");
-            nodeMapper.insert(node);
-        }
-        tpl.setVersion(tpl.getVersion() + 1);
-        templateMapper.updateById(tpl);
-        return flowView(templateMapper.selectById(tpl.getId()));
-    }
-
     // ==================== 内部 ====================
-
-    private List<RepairFlowNodeRequest> validateNodes(List<RepairFlowNodeRequest> nodes) {
-        if (nodes == null || nodes.isEmpty()) {
-            throw BizException.conflict("报修审批流程至少需要一个节点");
-        }
-        for (RepairFlowNodeRequest n : nodes) {
-            if (n.name() == null || n.name().isBlank()) {
-                throw BizException.conflict("节点名称不能为空");
-            }
-            if (n.approveRole() == null || n.approveRole().isBlank()) {
-                throw BizException.conflict("节点审批角色不能为空");
-            }
-            Long roleExists = roleMapper.selectCount(
-                    new LambdaQueryWrapper<SysRole>().eq(SysRole::getCode, n.approveRole()));
-            if (roleExists == null || roleExists == 0) {
-                throw BizException.conflict("审批角色不存在：" + n.approveRole());
-            }
-        }
-        return nodes;
-    }
 
     private String validateSpaceType(String t) {
         if (t == null || t.isBlank()) {

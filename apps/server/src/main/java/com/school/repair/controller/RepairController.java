@@ -7,7 +7,6 @@ import com.school.common.security.RequireMenu;
 import com.school.common.web.ApiResponse;
 import com.school.repair.dto.RepairTicketAssignRequest;
 import com.school.repair.dto.RepairTicketCreateRequest;
-import com.school.repair.dto.RepairTicketStatusRequest;
 import com.school.repair.service.RepairConfigService;
 import com.school.repair.service.RepairService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -105,14 +104,10 @@ public class RepairController {
         return ApiResponse.ok(repairService.assign(request, id, req));
     }
 
-    @DataScope(resource = "repair_ticket", ownership = OwnershipType.ORG,
-            ownerField = "reporterId", deptField = "reporterDeptId", termField = "termId")
-    @RequireButton("BTN-REP-STATUS")
+    @DataScope(resource = "sys_user", ownership = OwnershipType.PUBLIC)
     @RequireMenu("M0403")
-    @PutMapping("/tickets/{id}/status")
-    public Map<String, Object> updateStatus(@PathVariable String id,
-                                            @Valid @RequestBody RepairTicketStatusRequest req,
-                                            HttpServletRequest request) {
-        return ApiResponse.ok(repairService.updateStatus(request, id, req));
+    @GetMapping("/repairmen")
+    public Map<String, Object> repairmen() {
+        return ApiResponse.ok(repairService.repairmen());
     }
 }
