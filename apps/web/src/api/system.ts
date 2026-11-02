@@ -31,6 +31,13 @@ export type DeptType = "SCHOOL" | "GRADE" | "CLASS" | "SUBJECT" | "OFFICE";
 export type ScopeLevel = "SELF" | "GRADE" | "ALL";
 
 // ---- 实体 ----
+/** 角色简要信息（用户列表附带） */
+export interface RoleBrief {
+  id: string;
+  code: string;
+  name: string;
+}
+
 export interface SysUser {
   id: string;
   username: string;
@@ -38,6 +45,7 @@ export interface SysUser {
   accountStatus: AccountStatus;
   studentStatus?: StudentStatus;
   studentId?: string;
+  roles?: RoleBrief[];
   createdAt?: string;
 }
 
@@ -96,6 +104,9 @@ const unwrap = <T>(p: Promise<ApiResp<T>>): Promise<T> => p.then(r => r.data);
 // ===================== 用户（M0501） =====================
 export const pageUsers = (params: {
   keyword?: string;
+  status?: string;
+  roleId?: string;
+  studentId?: string;
   page?: number;
   pageSize?: number;
 }) => unwrap(http.request<ApiResp<PageResult<SysUser>>>("get", "/api/system/users", { params }));
@@ -129,6 +140,10 @@ export const assignUserRoles = (id: string, roleIds: string[]) =>
       data: { roleIds }
     })
   );
+
+/** 回显某用户已分配的角色 id 列表 */
+export const getUserRoles = (id: string) =>
+  unwrap(http.request<ApiResp<string[]>>("get", `/api/system/users/${id}/roles`));
 
 export const resetUserPassword = (id: string, newPassword: string) =>
   unwrap(

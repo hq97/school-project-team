@@ -43,9 +43,12 @@ public class UserController {
     @PublicDataScope(reason = "系统管理平台级数据，仅菜单/按钮权限控制")
     @GetMapping
     public Map<String, Object> page(@RequestParam(required = false) String keyword,
+                                    @RequestParam(required = false) String status,
+                                    @RequestParam(required = false) String roleId,
+                                    @RequestParam(required = false) String studentId,
                                     @RequestParam(defaultValue = "1") long page,
                                     @RequestParam(defaultValue = "10") long pageSize) {
-        Page<SysUser> p = userService.page(keyword, page, pageSize);
+        Page<SysUser> p = userService.page(keyword, status, roleId, studentId, page, pageSize);
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("list", p.getRecords());
         data.put("total", p.getTotal());
@@ -74,6 +77,13 @@ public class UserController {
     public Map<String, Object> delete(@PathVariable String id) {
         userService.delete(id, CurrentPrincipal.require().userId());
         return ApiResponse.ok(null);
+    }
+
+    @PublicDataScope(reason = "系统管理平台级数据，仅菜单/按钮权限控制")
+    @RequireButton("BTN-SYS-USER-EDIT")
+    @GetMapping("/{id}/roles")
+    public Map<String, Object> getUserRoles(@PathVariable String id) {
+        return ApiResponse.ok(userService.getUserRoles(id));
     }
 
     @PublicDataScope(reason = "系统管理平台级数据，仅菜单/按钮权限控制")

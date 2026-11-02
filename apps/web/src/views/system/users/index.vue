@@ -10,6 +10,7 @@ import {
   resetUserPassword,
   listRoles,
   assignUserRoles,
+  getUserRoles,
   type SysUser,
   type SysRole,
   type AccountStatus,
@@ -24,7 +25,14 @@ import {
 const loading = ref(false);
 const list = ref<SysUser[]>([]);
 const total = ref(0);
-const query = reactive({ keyword: "", page: 1, pageSize: 10 });
+const query = reactive({
+  keyword: "",
+  status: "",
+  roleId: "",
+  studentId: "",
+  page: 1,
+  pageSize: 10
+});
 
 const ACCOUNT_STATUS: { label: string; value: AccountStatus }[] = [
   { label: "启用", value: "ACTIVE" },
@@ -50,7 +58,23 @@ async function load() {
     loading.value = false;
   }
 }
-onMounted(load);
+onMounted(() => {
+  load();
+  loadRoles();
+});
+
+async function loadRoles() {
+  try {
+    roles.value = await listRoles();
+  } catch {
+    // 角色加载失败不阻塞用户列表
+  }
+}
+
+function search() {
+  query.page = 1;
+  load();
+}
 
 // ---------- 新增 / 编辑 ----------
 const dialog = reactive({
@@ -188,6 +212,12 @@ async function openRoles(row: SysUser) {
     }
   }
   roleDialog.visible = true;
+  // 回显该用户已分配的角色（后端 GET /{id}/roles）
+  try {
+    roleDialog.checked = (await getUserRoles(row.id)) ?? [];
+  } catch {
+    roleDialog.checked = [];
+  }
 }
 async function submitRoles() {
   roleDialog.saving = true;
@@ -215,12 +245,38 @@ async function submitRoles() {
           v-model="query.keyword"
           placeholder="搜索用户名 / 姓名"
           clearable
-          style="width: 220px"
-          @keyup.enter="load"
+          style="width: 180px"
+          @keyup.enter="search"
         >
           <template #prefix><el-icon><Search /></el-icon></template>
         </el-input>
-        <el-button :loading="loading" @click="load">
+        <el-input
+          v-model="query.studentId"
+          placeholder="学号"
+          clearable
+          style="width: 140px"
+          @keyup.enter="search"
+        />
+        <el-select
+          v-model="query.status"
+          placeholder="状态"
+          clearable
+          style="width: 110px"
+          @change="search"
+        >
+          <el-option v-for="s in ACCOUNT_STATUS" :key="s.value" :label="s.label" :value="s.value" />
+        </el-select>
+        <el-select
+          v-model="query.roleId"
+          placeholder="角色"
+          clearable
+          filterable
+          style="width: 150px"
+          @change="search"
+        >
+          <el-option v-for="r in roles" :key="r.id" :label="r.name" :value="r.id" />
+        </el-select>
+        <el-button :loading="loading" @click="search">
           <el-icon><Refresh /></el-icon>&nbsp;查询
         </el-button>
         <el-button v-perms="'BTN-SYS-USER-ADD'" type="primary" @click="openCreate">
@@ -242,6 +298,22 @@ async function submitRoles() {
         </el-table-column>
         <el-table-column prop="studentId" label="学号" min-width="100">
           <template #default="{ row }">{{ row.studentId || "—" }}</template>
+        </el-table-column>
+        <el-table-column label="角色" min-width="160">
+          <template #default="{ row }">
+            <template v-if="row.roles && row.roles.length">
+              <el-tag
+                v-for="r in row.roles"
+                :key="r.id"
+                size="small"
+                effect="plain"
+                style="margin-right: 4px"
+              >
+                {{ r.name }}
+              </el-tag>
+            </template>
+            <span v-else>—</span>
+          </template>
         </el-table-column>
         <el-table-column label="操作" width="300" fixed="right">
           <template #default="{ row }">

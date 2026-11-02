@@ -9,6 +9,8 @@ import com.school.system.enums.AccountStatus;
 import com.school.system.enums.StudentStatus;
 
 import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 系统用户（V1 表 sys_user）。
@@ -43,6 +45,10 @@ public class SysUser {
     @TableField("\"createdAt\"")
     private OffsetDateTime createdAt;
 
+    /** 用户角色（列表查询时填充，非表字段）。每项含 id/code/name。 */
+    @TableField(exist = false)
+    private List<Map<String, Object>> roles;
+
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
     public String getUsername() { return username; }
@@ -59,4 +65,6 @@ public class SysUser {
     public void setStudentId(String studentId) { this.studentId = studentId; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
+    public List<Map<String, Object>> getRoles() { return roles; }
+    public void setRoles(List<Map<String, Object>> roles) { this.roles = roles; }
 }
