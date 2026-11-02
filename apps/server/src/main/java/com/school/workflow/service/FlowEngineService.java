@@ -237,6 +237,43 @@ public class FlowEngineService {
         return approve(task.getId(), action, comment, approver);
     }
 
+    /**
+     * 管理员代完成：跳过剩余审批节点，把进行中实例直接置 COMPLETED。
+     *
+     * <p>调用方（业务侧）负责校验操作者代完成权限（角色白名单）与业务状态，
+     * 本方法只做流程层推进 + 当前节点待办留痕。业务状态经
+     * {@link #notifyApproved(String, String)} → ApprovalResultHandler.onApproved 联动，
+     * 与流程状态同事务原子提交。</p>
+     */
+    @Transactional
+    public Map<String, Object> forceComplete(String businessType, String businessId,
+                                             String comment, Principal operator) {
+        FlowInstance inst = instanceMapper.selectOne(
+                new LambdaQueryWrapper<FlowInstance>()
+                        .eq(FlowInstance::getBusinessType, businessType)
+                        .eq(FlowInstance::getBusinessId, businessId)
+                        .last("LIMIT 1"));
+        if (inst == null || !"PENDING".equals(inst.getStatus())) {
+            throw BizException.conflict("流程不存在或已结束，无法代完成");
+        }
+        FlowTask task = taskMapper.selectOne(
+                new LambdaQueryWrapper<FlowTask>()
+                        .eq(FlowTask::getInstanceId, inst.getId())
+                        .eq(FlowTask::getSeq, inst.getCurrentSeq())
+                        .isNull(FlowTask::getConclusion));
+        if (task != null) {
+            task.setApproverId(operator.userId());
+            task.setConclusion("APPROVED");
+            task.setComment(comment == null || comment.isBlank() ? "管理员代完成" : comment);
+            task.setActedAt(OffsetDateTime.now());
+            taskMapper.updateById(task);
+        }
+        inst.setStatus("COMPLETED");
+        instanceMapper.updateById(inst);
+        notifyApproved(inst.getBusinessType(), inst.getBusinessId());
+        return instanceView(instanceMapper.selectById(inst.getId()));
+    }
+
     /** 查询实例（供业务侧查询审批进度）。 */
     public Map<String, Object> instance(String instanceId) {
         FlowInstance inst = instanceMapper.selectById(instanceId);

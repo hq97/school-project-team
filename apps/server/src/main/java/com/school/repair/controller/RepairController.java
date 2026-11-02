@@ -104,6 +104,15 @@ public class RepairController {
         return ApiResponse.ok(repairService.assign(request, id, req));
     }
 
+    @DataScope(resource = "repair_ticket", ownership = OwnershipType.ORG,
+            ownerField = "reporterId", deptField = "reporterDeptId", termField = "termId")
+    @RequireButton("BTN-REP-COMPLETE")
+    @RequireMenu("M0403")
+    @PostMapping("/tickets/{id}/complete")
+    public Map<String, Object> complete(@PathVariable String id, HttpServletRequest request) {
+        return ApiResponse.ok(repairService.completeByAdmin(request, id));
+    }
+
     @DataScope(resource = "sys_user", ownership = OwnershipType.PUBLIC)
     @RequireMenu("M0403")
     @GetMapping("/repairmen")

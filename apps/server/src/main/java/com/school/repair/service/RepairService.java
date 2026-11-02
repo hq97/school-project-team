@@ -42,6 +42,8 @@ import java.util.Map;
 public class RepairService {
 
     private static final String ROLE_REPAIRMAN = "R-REPAIRMAN";
+    private static final String ROLE_ADMIN = "R-ADMIN";
+    private static final String ROLE_LOGISTICS = "R-LOGISTICS";
 
     private final RepairTicketMapper mapper;
     private final SpaceMapper spaceMapper;
@@ -162,6 +164,25 @@ public class RepairService {
         mapper.updateById(e);
         flowEngine.approveByBusiness("repair", id, "APPROVE", null, p);
         return view(e);
+    }
+
+    /**
+     * 代完成（超级管理员 R-ADMIN / 后勤 R-LOGISTICS）：未结束工单直接完成，跳过剩余审批节点。
+     * 角色白名单硬校验 + 按钮权限(@RequireButton BTN-REP-COMPLETE)双重 fail-closed；
+     * 业务状态经 RepairApprovalHandler.onApproved 联动（同一事务）。
+     */
+    @Transactional
+    public Map<String, Object> completeByAdmin(HttpServletRequest request, String id) {
+        Principal p = CurrentPrincipal.require();
+        RepairTicket e = requireTicket(request, id);
+        if ("COMPLETED".equals(e.getStatus()) || "REJECTED".equals(e.getStatus())) {
+            throw BizException.conflict("工单已结束，无法代完成");
+        }
+        if (!p.roleCodes().contains(ROLE_ADMIN) && !p.roleCodes().contains(ROLE_LOGISTICS)) {
+            throw BizException.actionDenied();
+        }
+        flowEngine.forceComplete("repair", id, "管理员代完成", p);
+        return view(mapper.selectById(id));
     }
 
     /** 工单详情：matchRecord 判归属，不通过抛 40304 防枚举；带审批进度。 */
