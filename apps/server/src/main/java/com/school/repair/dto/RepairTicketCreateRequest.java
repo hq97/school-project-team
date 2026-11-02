@@ -7,5 +7,6 @@ import jakarta.validation.constraints.NotBlank;
  */
 public record RepairTicketCreateRequest(
         String spaceId,
-        @NotBlank(message = "故障类型不能为空") String faultType) {
+        @NotBlank(message = "故障类型不能为空") String faultType,
+        String description) {
 }

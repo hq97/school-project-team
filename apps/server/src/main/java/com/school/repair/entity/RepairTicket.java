@@ -36,6 +36,9 @@ public class RepairTicket {
     @TableField("\"termId\"")
     private String termId;
 
+    @TableField("\"description\"")
+    private String description;
+
     private String status;
 
     @TableField("\"assignedTo\"")
@@ -64,6 +67,8 @@ public class RepairTicket {
     public void setFaultType(String faultType) { this.faultType = faultType; }
     public String getTermId() { return termId; }
     public void setTermId(String termId) { this.termId = termId; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
     public String getAssignedTo() { return assignedTo; }

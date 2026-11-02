@@ -8,6 +8,7 @@ import com.school.common.web.ApiResponse;
 import com.school.repair.dto.RepairTicketAssignRequest;
 import com.school.repair.dto.RepairTicketCreateRequest;
 import com.school.repair.dto.RepairTicketStatusRequest;
+import com.school.repair.service.RepairConfigService;
 import com.school.repair.service.RepairService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -30,9 +31,11 @@ import java.util.Map;
 public class RepairController {
 
     private final RepairService repairService;
+    private final RepairConfigService repairConfigService;
 
-    public RepairController(RepairService repairService) {
+    public RepairController(RepairService repairService, RepairConfigService repairConfigService) {
         this.repairService = repairService;
+        this.repairConfigService = repairConfigService;
     }
 
     @DataScope(resource = "space", ownership = OwnershipType.PUBLIC)
@@ -40,6 +43,13 @@ public class RepairController {
     @GetMapping("/spaces")
     public Map<String, Object> spaces() {
         return ApiResponse.ok(repairService.spaces());
+    }
+
+    @DataScope(resource = "flow_template", ownership = OwnershipType.PUBLIC)
+    @RequireMenu("M0401")
+    @GetMapping("/flow")
+    public Map<String, Object> flow() {
+        return ApiResponse.ok(repairConfigService.flow());
     }
 
     @DataScope(resource = "repair_ticket", ownership = OwnershipType.ORG,

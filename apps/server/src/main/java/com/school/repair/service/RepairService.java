@@ -60,6 +60,7 @@ public class RepairService {
         e.setReporterDeptId(primaryDept(p));
         e.setSpaceId(req.spaceId());
         e.setFaultType(req.faultType());
+        e.setDescription(req.description());
         e.setTermId(p.currentTermId());
         e.setStatus("PENDING");
         e.setCreatedAt(OffsetDateTime.now());
@@ -182,6 +183,7 @@ public class RepairService {
         m.put("reporterDeptId", e.getReporterDeptId());
         m.put("spaceId", e.getSpaceId());
         m.put("faultType", e.getFaultType());
+        m.put("description", e.getDescription());
         m.put("termId", e.getTermId());
         m.put("status", e.getStatus());
         m.put("assignedTo", e.getAssignedTo());
