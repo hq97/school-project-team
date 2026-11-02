@@ -128,6 +128,13 @@ export function assignRepair(id: string, repairmanId: string) {
   );
 }
 
+/** 代完成工单（BTN-REP-COMPLETE，M0403）：跳过审批直接完成，仅 R-ADMIN/R-LOGISTICS */
+export function completeRepair(id: string) {
+  return unwrap(
+    http.request<ApiResp<RepairTicket>>("post", `/api/repair/tickets/${id}/complete`)
+  );
+}
+
 /** 报修响应统计（M0404） */
 export function repairStats() {
   return unwrap(http.request<ApiResp<RepairStats>>("get", "/api/repair/stats"));

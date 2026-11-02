@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from "vue";
-import { ElMessage } from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
 import { Refresh } from "@element-plus/icons-vue";
 import {
   listRepairTickets,
@@ -8,6 +8,7 @@ import {
   listDictItems,
   assignRepair,
   listRepairmen,
+  completeRepair,
 } from "@/api/biz";
 import type { RepairTicket, Repairman, SpaceItem } from "@/api/types";
 
@@ -37,6 +38,7 @@ const spaceName = (id?: string) => (id ? (spaceMap.value[id] ?? id) : "—");
 const faultName = (code?: string) => (code ? (faultMap.value[code] ?? code) : "—");
 const repairmanName = (id?: string) =>
   id ? (repairmanMap.value[id] ?? id) : "—";
+const canComplete = (s?: string) => !!s && !["COMPLETED", "REJECTED", "CANCELLED"].includes(s);
 const fmt = (t?: string) => (t ? new Date(t).toLocaleString("zh-CN", { hour12: false }) : "—");
 
 async function load() {
@@ -108,6 +110,26 @@ async function submitAssign() {
   }
 }
 
+// ---------- 代完成（BTN-REP-COMPLETE，仅 R-ADMIN/R-LOGISTICS，跳过剩余审批） ----------
+async function complete(row: RepairTicket) {
+  try {
+    await ElMessageBox.confirm(
+      `确认将工单 ${row.ticketNo} 标记为已完成？此操作将跳过剩余审批流程。`,
+      "代完成确认",
+      { type: "warning", confirmButtonText: "确认完成", cancelButtonText: "取消" }
+    );
+  } catch {
+    return;
+  }
+  try {
+    await completeRepair(row.id);
+    ElMessage.success("工单已完成");
+    load();
+  } catch {
+    ElMessage.error("操作失败");
+  }
+}
+
 onMounted(() => {
   load();
   loadRefs();
@@ -159,7 +181,7 @@ onMounted(() => {
         <el-table-column label="提交时间" min-width="165">
           <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="130" fixed="right">
+        <el-table-column label="操作" width="190" fixed="right">
           <template #default="{ row }">
             <el-button
               v-if="row.status === 'PENDING'"
@@ -170,7 +192,15 @@ onMounted(() => {
             >
               分派
             </el-button>
-            <span v-else-if="row.status === 'ASSIGNED'" class="tk__hint">维修处理中</span>
+            <el-button
+              v-if="canComplete(row.status)"
+              v-perms="'BTN-REP-COMPLETE'"
+              link
+              type="success"
+              @click="complete(row)"
+            >
+              代完成
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -227,9 +257,5 @@ onMounted(() => {
 }
 .tk__card {
   padding: var(--sa-space-4);
-}
-.tk__hint {
-  font-size: var(--sa-fs-12);
-  color: var(--sa-text-3);
 }
 </style>
