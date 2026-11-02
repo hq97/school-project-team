@@ -41,6 +41,12 @@ public class RepairTicket {
     @TableField("\"assignedTo\"")
     private String assignedTo;
 
+    @TableField("\"assignedAt\"")
+    private OffsetDateTime assignedAt;
+
+    @TableField("\"completedAt\"")
+    private OffsetDateTime completedAt;
+
     @TableField("\"createdAt\"")
     private OffsetDateTime createdAt;
 
@@ -62,6 +68,10 @@ public class RepairTicket {
     public void setStatus(String status) { this.status = status; }
     public String getAssignedTo() { return assignedTo; }
     public void setAssignedTo(String assignedTo) { this.assignedTo = assignedTo; }
+    public OffsetDateTime getAssignedAt() { return assignedAt; }
+    public void setAssignedAt(OffsetDateTime assignedAt) { this.assignedAt = assignedAt; }
+    public OffsetDateTime getCompletedAt() { return completedAt; }
+    public void setCompletedAt(OffsetDateTime completedAt) { this.completedAt = completedAt; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
 }

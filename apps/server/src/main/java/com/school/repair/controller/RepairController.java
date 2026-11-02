@@ -61,6 +61,22 @@ public class RepairController {
 
     @DataScope(resource = "repair_ticket", ownership = OwnershipType.ORG,
             ownerField = "reporterId", deptField = "reporterDeptId", termField = "termId")
+    @RequireMenu("M0402")
+    @GetMapping("/tickets/{id}")
+    public Map<String, Object> detail(@PathVariable String id, HttpServletRequest request) {
+        return ApiResponse.ok(repairService.detail(request, id));
+    }
+
+    @DataScope(resource = "repair_ticket", ownership = OwnershipType.ORG,
+            ownerField = "reporterId", deptField = "reporterDeptId", termField = "termId")
+    @RequireMenu("M0404")
+    @GetMapping("/stats")
+    public Map<String, Object> stats(HttpServletRequest request) {
+        return ApiResponse.ok(repairService.stats(request));
+    }
+
+    @DataScope(resource = "repair_ticket", ownership = OwnershipType.ORG,
+            ownerField = "reporterId", deptField = "reporterDeptId", termField = "termId")
     @RequireMenu("M0403")
     @GetMapping("/tickets")
     public Map<String, Object> list(HttpServletRequest request,

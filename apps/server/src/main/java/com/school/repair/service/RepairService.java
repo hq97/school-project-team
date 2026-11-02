@@ -95,6 +95,7 @@ public class RepairService {
             throw BizException.conflict("仅待分派工单可分派");
         }
         e.setAssignedTo(req.assignedTo());
+        e.setAssignedAt(OffsetDateTime.now());
         e.setStatus("ASSIGNED");
         mapper.updateById(e);
         return view(e);
@@ -110,8 +111,44 @@ public class RepairService {
             throw BizException.conflict("工单状态不允许从 " + from + " 流转到 " + to);
         }
         e.setStatus(to);
+        if ("COMPLETED".equals(to)) {
+            e.setCompletedAt(OffsetDateTime.now());
+        }
         mapper.updateById(e);
         return view(e);
+    }
+
+    /** 工单详情：matchRecord 判归属，不通过抛 40304 防枚举。 */
+    public Map<String, Object> detail(HttpServletRequest request, String id) {
+        RepairTicket e = requireTicket(request, id);
+        return view(e);
+    }
+
+    /** 报修响应统计（M0404）：平均响应时长（秒）+ 超时未处理清单，按范围过滤。 */
+    public Map<String, Object> stats(HttpServletRequest request) {
+        ScopeQueryBuilder scope = ScopeQueryBuilder.fromRequest(request);
+
+        // 平均响应时长：assignedAt - createdAt（秒）
+        QueryWrapper<RepairTicket> avgQw = new QueryWrapper<>();
+        ScopeWrapper.apply(avgQw, scope.buildWhere(null));
+        avgQw.isNotNull("\"assignedAt\"");
+        avgQw.select("COALESCE(AVG(EXTRACT(EPOCH FROM (\"assignedAt\" - \"createdAt\"))), 0) AS \"avgSeconds\"");
+        List<Map<String, Object>> avgRows = mapper.selectMaps(avgQw);
+        double avgSeconds = avgRows.isEmpty() ? 0 : ((Number) avgRows.get(0).get("avgSeconds")).doubleValue();
+
+        // 超时未处理：PENDING/ASSIGNED/PROCESSING 且创建超 24h（P0 默认阈值，dict 缺数值列，暂硬编码）
+        QueryWrapper<RepairTicket> overdueQw = new QueryWrapper<>();
+        ScopeWrapper.apply(overdueQw, scope.buildWhere(null));
+        overdueQw.in("\"status\"", "PENDING", "ASSIGNED", "PROCESSING");
+        overdueQw.lt("\"createdAt\"", OffsetDateTime.now().minusHours(24));
+        overdueQw.orderByAsc("\"createdAt\"");
+        List<Map<String, Object>> overdue = mapper.selectList(overdueQw).stream().map(this::view).toList();
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("avgResponseSeconds", Math.round(avgSeconds));
+        out.put("overdueCount", overdue.size());
+        out.put("overdueTickets", overdue);
+        return out;
     }
 
     private RepairTicket requireTicket(HttpServletRequest request, String id) {
@@ -148,6 +185,8 @@ public class RepairService {
         m.put("termId", e.getTermId());
         m.put("status", e.getStatus());
         m.put("assignedTo", e.getAssignedTo());
+        m.put("assignedAt", e.getAssignedAt());
+        m.put("completedAt", e.getCompletedAt());
         m.put("createdAt", e.getCreatedAt());
         return m;
     }

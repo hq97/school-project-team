@@ -10,6 +10,7 @@ import com.school.material.service.MaterialService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -54,5 +55,14 @@ public class MaterialController {
     @GetMapping("/requisitions/my")
     public Map<String, Object> my(HttpServletRequest request) {
         return ApiResponse.ok(materialService.my(request));
+    }
+
+    /** 领用详情（matchRecord 判归属，M0302 我的申请）。 */
+    @DataScope(resource = "material_requisition", ownership = OwnershipType.ORG,
+            ownerField = "applicantId", deptField = "applicantDeptId", termField = "termId")
+    @RequireMenu("M0302")
+    @GetMapping("/requisitions/{id}")
+    public Map<String, Object> detail(@PathVariable String id, HttpServletRequest request) {
+        return ApiResponse.ok(materialService.detail(request, id));
     }
 }

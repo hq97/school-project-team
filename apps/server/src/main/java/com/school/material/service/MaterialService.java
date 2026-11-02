@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,6 +99,21 @@ public class MaterialService {
         }).toList();
     }
 
+    /** 领用详情：matchRecord 判归属，不通过抛 40304 防枚举。 */
+    public Map<String, Object> detail(HttpServletRequest request, String id) {
+        MaterialRequisition e = mapper.selectById(id);
+        if (e == null) {
+            throw BizException.notFound();
+        }
+        ScopeQueryBuilder scope = ScopeQueryBuilder.fromRequest(request);
+        if (!scope.matchRecord(record(e))) {
+            throw BizException.notFound();
+        }
+        Map<String, Object> v = view(e);
+        v.put("flow", flowEngine.instanceByBusiness("material", id));
+        return v;
+    }
+
     private Map<String, Object> view(MaterialRequisition e) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", e.getId());
@@ -122,6 +138,14 @@ public class MaterialService {
         m.put("location", a.getLocation());
         m.put("borrowDomain", a.getBorrowDomain());
         return m;
+    }
+
+    private Map<String, Object> record(MaterialRequisition e) {
+        Map<String, Object> r = new HashMap<>();
+        r.put("applicantId", e.getApplicantId());
+        r.put("applicantDeptId", e.getApplicantDeptId());
+        r.put("termId", e.getTermId());
+        return r;
     }
 
     static String primaryDept(Principal p) {

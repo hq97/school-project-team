@@ -5,6 +5,7 @@ import com.school.common.scope.DataScope;
 import com.school.common.scope.OwnershipType;
 import com.school.common.security.RequireMenu;
 import com.school.common.web.ApiResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -28,7 +29,7 @@ public class AssetController {
     @DataScope(resource = "asset", ownership = OwnershipType.PUBLIC)
     @RequireMenu("M0303")
     @GetMapping("/list")
-    public Map<String, Object> list(@RequestParam(required = false) String assetType) {
-        return ApiResponse.ok(assetService.list(assetType));
+    public Map<String, Object> list(@RequestParam(required = false) String assetType, HttpServletRequest request) {
+        return ApiResponse.ok(assetService.list(request, assetType));
     }
 }

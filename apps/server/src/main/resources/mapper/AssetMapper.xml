@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.school.asset.mapper.AssetMapper">
+
+    <!-- C9 库存 CAS：原子扣减，availableQty >= qty 才更新，影响行数 0 = 库存不足（40903） -->
+    <update id="deductStock">
+        UPDATE "asset"
+        SET "availableQty" = "availableQty" - #{qty}
+        WHERE "id" = #{id} AND "availableQty" &gt;= #{qty}
+    </update>
+
+    <!-- 审批驳回回滚库存 -->
+    <update id="restoreStock">
+        UPDATE "asset"
+        SET "availableQty" = "availableQty" + #{qty}
+        WHERE "id" = #{id}
+    </update>
+
+</mapper>
