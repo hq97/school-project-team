@@ -39,5 +39,25 @@ yarn-error.log*
 Thumbs.db
 desktop.ini
 
+# 前端构建/类型缓存（Vite / TypeScript 增量）
+.vite/
+*.tsbuildinfo
+
+# Python（E2E 测试脚本 scripts/flow_e2e.py）
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# 测试覆盖率
+coverage/
+.coverage
+htmlcov/
+
+# JVM 崩溃日志
+hs_err_pid*
+
 # 临时退出码/验证残留（工具运行时的 exit 记录）
 _*.txt
