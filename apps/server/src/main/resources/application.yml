@@ -28,7 +28,9 @@ mybatis-plus:
 school:
   jwt:
     secret: ${JWT_SECRET:dev-secret-change-me}
-    access-token-ttl: 900          # 秒，15 分钟
+    # 访问令牌有效期（秒）。前端登录后按 7 天硬编码 expires，且 refresh 接口尚未实现，
+    # 故此处对齐到 7 天，避免 15 分钟过期导致 401。待实现 refresh-token 流转后再降回短时（如 900）。
+    access-token-ttl: 604800        # 秒，7 天
     refresh-token-ttl: 604800      # 秒，7 天
   ai:
     enabled: false
