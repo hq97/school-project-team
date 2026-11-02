@@ -159,11 +159,20 @@ export const updateRole = (
 export const deleteRole = (id: string) =>
   unwrap(http.request<ApiResp<unknown>>("delete", `/api/system/roles/${id}`));
 
-export const assignRoleMenus = (id: string, menuIds: string[], buttonIds: string[]) =>
+export const assignRoleMenus = (id: string, menuIds: string[], buttonIds?: string[]) =>
   unwrap(
     http.request<ApiResp<unknown>>("put", `/api/system/roles/${id}/menus`, {
       data: { menuIds, buttonIds }
     })
+  );
+
+/** 回显某角色已分配的菜单/按钮（分配菜单对话框打开时回填勾选） */
+export const getRoleMenus = (id: string) =>
+  unwrap(
+    http.request<ApiResp<{ menuIds: string[]; buttonIds: string[] }>>(
+      "get",
+      `/api/system/roles/${id}/menus`
+    )
   );
 
 export const assignRoleScopes = (id: string, scopes: ScopeItem[]) =>

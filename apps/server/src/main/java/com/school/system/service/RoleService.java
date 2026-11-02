@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 系统角色管理（M0502）+ 角色授权（菜单/按钮/数据范围）。
@@ -103,15 +104,30 @@ public class RoleService {
         assignScopesInternal(id, req.scopes());
     }
 
+    /** 回显某角色已分配的菜单与按钮（「分配菜单」对话框打开时勾选回显）。 */
+    public Map<String, List<String>> assignedMenus(String roleId) {
+        require(roleId);
+        List<String> menuIds = roleMenuMapper.selectList(
+                        new LambdaQueryWrapper<RoleMenu>().eq(RoleMenu::getRoleId, roleId))
+                .stream().map(RoleMenu::getMenuId).toList();
+        List<String> buttonIds = roleButtonMapper.selectList(
+                        new LambdaQueryWrapper<RoleButton>().eq(RoleButton::getRoleId, roleId))
+                .stream().map(RoleButton::getButtonId).toList();
+        return Map.of("menuIds", menuIds, "buttonIds", buttonIds);
+    }
+
     private void assignMenusInternal(String roleId, List<String> menuIds, List<String> buttonIds) {
         roleMenuMapper.delete(new LambdaQueryWrapper<RoleMenu>().eq(RoleMenu::getRoleId, roleId));
-        roleButtonMapper.delete(new LambdaQueryWrapper<RoleButton>().eq(RoleButton::getRoleId, roleId));
         if (menuIds != null) {
             for (String menuId : menuIds) {
                 roleMenuMapper.insert(new RoleMenu(roleId, menuId));
             }
         }
+        // 按钮授权仅在显式传入时重建；null 表示「仅分配菜单，不改动既有按钮」。
+        // 修复：前端「分配菜单」只提交 menuIds（buttonIds 缺省），旧实现误把按钮一并清空，
+        // 导致被分配角色（含 R-ADMIN）按钮权限丢失、后续操作 40302。
         if (buttonIds != null) {
+            roleButtonMapper.delete(new LambdaQueryWrapper<RoleButton>().eq(RoleButton::getRoleId, roleId));
             for (String buttonId : buttonIds) {
                 roleButtonMapper.insert(new RoleButton(roleId, buttonId));
             }

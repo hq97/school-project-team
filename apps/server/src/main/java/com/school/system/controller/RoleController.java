@@ -65,6 +65,13 @@ public class RoleController {
 
     @PublicDataScope(reason = "系统管理平台级数据，仅菜单/按钮权限控制")
     @RequireButton("BTN-SYS-ROLE-PERM")
+    @GetMapping("/{id}/menus")
+    public Map<String, Object> assignedMenus(@PathVariable String id) {
+        return ApiResponse.ok(roleService.assignedMenus(id));
+    }
+
+    @PublicDataScope(reason = "系统管理平台级数据，仅菜单/按钮权限控制")
+    @RequireButton("BTN-SYS-ROLE-PERM")
     @PutMapping("/{id}/menus")
     public Map<String, Object> assignMenus(@PathVariable String id, @RequestBody RoleMenuAssignRequest req) {
         roleService.assignMenus(id, req);

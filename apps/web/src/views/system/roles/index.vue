@@ -10,6 +10,7 @@ import {
   deleteRole,
   listMenus,
   assignRoleMenus,
+  getRoleMenus,
   type SysRole,
   type SysMenuNode,
   type ScopeLevel
@@ -142,7 +143,13 @@ async function openPerm(row: SysRole) {
   }
   permDialog.visible = true;
   await nextTick();
-  menuTreeRef.value?.setCheckedKeys([]);
+  // 回显该角色已分配的菜单（后端 GET /{id}/menus），而非清空
+  try {
+    const { menuIds } = await getRoleMenus(row.id);
+    menuTreeRef.value?.setCheckedKeys(menuIds ?? []);
+  } catch {
+    menuTreeRef.value?.setCheckedKeys([]);
+  }
 }
 
 async function submitPerm() {
@@ -151,7 +158,7 @@ async function submitPerm() {
   const all = [...new Set([...menuIds, ...halfChecked])];
   permDialog.saving = true;
   try {
-    await assignRoleMenus(permDialog.id, all, []);
+    await assignRoleMenus(permDialog.id, all);
     ElMessage.success("菜单授权已更新");
     permDialog.visible = false;
   } catch (e) {
