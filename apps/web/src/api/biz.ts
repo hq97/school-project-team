@@ -3,10 +3,13 @@ import type {
   AssetItem,
   BizError,
   BizErrorCode,
+  FaultTypeItem,
   MaterialRequisition,
   OccupancyState,
+  RepairFlow,
   RepairStats,
   RepairTicket,
+  SpaceConfig,
   SpaceItem,
   StatDim,
   TimeSlot,
@@ -78,7 +81,12 @@ export function applyMaterial(payload: { assetId: string; quantity: number }) {
 }
 
 /** 报修提交（BTN-REP-SUBMIT，M0401）：POST /api/repair/tickets */
-export function submitRepair(payload: { spaceId: string; faultType: string }) {
+export function submitRepair(payload: {
+  spaceId: string;
+  faultType: string;
+  /** 故障描述（可选） */
+  description?: string;
+}) {
   return unwrap(
     http.request<ApiResp<RepairTicket>>("post", "/api/repair/tickets", {
       data: payload,
@@ -121,6 +129,101 @@ export function updateRepairStatus(id: string, status: string) {
 /** 报修响应统计（M0404） */
 export function repairStats() {
   return unwrap(http.request<ApiResp<RepairStats>>("get", "/api/repair/stats"));
+}
+
+/* ===================== 报修配置（M0405，按钮 BTN-REP-CONFIG） ===================== */
+
+/** 报修审批流（M0401 左半流程展示用；M0405 流程配置也读它） */
+export function listRepairFlow() {
+  return unwrap(http.request<ApiResp<RepairFlow>>("get", "/api/repair/flow"));
+}
+
+/** 按顺序重建报修审批流节点（BTN-REP-CONFIG） */
+export function updateRepairFlow(nodes: { name: string; approveRole: string; timeoutHours?: number }[]) {
+  return unwrap(
+    http.request<ApiResp<RepairFlow>>("put", "/api/repair/config/flow", {
+      data: { nodes },
+    })
+  );
+}
+
+/** 故障类型列表（DICT-FAULT-TYPE 统一管理） */
+export function listFaultTypes() {
+  return unwrap(
+    http.request<ApiResp<FaultTypeItem[]>>("get", "/api/repair/config/fault-types")
+  );
+}
+
+/** 新增故障类型 */
+export function createFaultType(payload: { itemCode: string; itemName: string; sort: number }) {
+  return unwrap(
+    http.request<ApiResp<FaultTypeItem>>("post", "/api/repair/config/fault-types", {
+      data: payload,
+    })
+  );
+}
+
+/** 编辑故障类型（itemName/sort/enabled） */
+export function updateFaultType(
+  id: string,
+  payload: { itemName: string; sort: number; enabled: boolean }
+) {
+  return unwrap(
+    http.request<ApiResp<FaultTypeItem>>("put", `/api/repair/config/fault-types/${id}`, {
+      data: payload,
+    })
+  );
+}
+
+/** 删除故障类型 */
+export function deleteFaultType(id: string) {
+  return unwrap(
+    http.request<ApiResp<unknown>>("delete", `/api/repair/config/fault-types/${id}`)
+  );
+}
+
+/** 报修位置配置列表 */
+export function listConfigSpaces() {
+  return unwrap(http.request<ApiResp<SpaceConfig[]>>("get", "/api/repair/config/spaces"));
+}
+
+/** 新增报修位置 */
+export function createConfigSpace(payload: {
+  spaceName: string;
+  spaceType: SpaceConfig["spaceType"];
+  capacity: number;
+  openScope?: string;
+}) {
+  return unwrap(
+    http.request<ApiResp<SpaceConfig>>("post", "/api/repair/config/spaces", {
+      data: payload,
+    })
+  );
+}
+
+/** 编辑报修位置（spaceName/spaceType/capacity/status/openScope） */
+export function updateConfigSpace(
+  id: string,
+  payload: {
+    spaceName: string;
+    spaceType: SpaceConfig["spaceType"];
+    capacity: number;
+    status: SpaceConfig["status"];
+    openScope?: string;
+  }
+) {
+  return unwrap(
+    http.request<ApiResp<SpaceConfig>>("put", `/api/repair/config/spaces/${id}`, {
+      data: payload,
+    })
+  );
+}
+
+/** 删除报修位置 */
+export function deleteConfigSpace(id: string) {
+  return unwrap(
+    http.request<ApiResp<unknown>>("delete", `/api/repair/config/spaces/${id}`)
+  );
 }
 
 /** 我的物资申请（M0302，forceSelf） */

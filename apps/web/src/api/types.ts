@@ -210,6 +210,44 @@ export interface RepairStats {
   overdueTickets: RepairTicket[];
 }
 
+/** 报修审批流节点（GET /api/repair/flow，M0401 流程展示） */
+export interface RepairFlowNode {
+  /** 流转顺序（从 1 开始） */
+  seq: number;
+  name: string;
+  /** 审批角色码 */
+  approveRole: string;
+  /** 超时小时数（可空） */
+  timeoutHours?: number | null;
+}
+
+/** 报修审批流（M0401 左半流程展示 + M0405 流程配置） */
+export interface RepairFlow {
+  id: string;
+  name: string;
+  nodes: RepairFlowNode[];
+}
+
+/** 故障类型配置项（/api/repair/config/fault-types，DICT-FAULT-TYPE 统一管理） */
+export interface FaultTypeItem {
+  id: string;
+  itemCode: string;
+  itemName: string;
+  sort: number;
+  enabled: boolean;
+}
+
+/** 报修位置配置项（/api/repair/config/spaces） */
+export interface SpaceConfig {
+  id: string;
+  spaceName: string;
+  spaceType: SpaceType;
+  capacity: number;
+  status: SpaceStatus;
+  /** 开放范围（SELF/GRADE/ALL） */
+  openScope?: string;
+}
+
 /** 时段格（周次 + 星期 + 节次） */
 export interface TimeSlot {
   week: number;
