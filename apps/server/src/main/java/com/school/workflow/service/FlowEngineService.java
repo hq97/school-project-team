@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -51,11 +52,13 @@ public class FlowEngineService {
     private final UserRoleMapper userRoleMapper;
     private final OwnershipResolver ownershipResolver;
     private final ObjectMapper objectMapper;
+    private final List<ApprovalResultHandler> approvalHandlers;
 
     public FlowEngineService(FlowTemplateMapper templateMapper, FlowNodeMapper nodeMapper,
                              FlowInstanceMapper instanceMapper, FlowTaskMapper taskMapper,
                              SysRoleMapper roleMapper, UserRoleMapper userRoleMapper,
-                             OwnershipResolver ownershipResolver, ObjectMapper objectMapper) {
+                             OwnershipResolver ownershipResolver, ObjectMapper objectMapper,
+                             List<ApprovalResultHandler> approvalHandlers) {
         this.templateMapper = templateMapper;
         this.nodeMapper = nodeMapper;
         this.instanceMapper = instanceMapper;
@@ -64,6 +67,7 @@ public class FlowEngineService {
         this.userRoleMapper = userRoleMapper;
         this.ownershipResolver = ownershipResolver;
         this.objectMapper = objectMapper;
+        this.approvalHandlers = approvalHandlers == null ? List.of() : approvalHandlers;
     }
 
     /** 业务发起审批：按 businessType 绑定的启用模板启动实例，创建首节点待办。 */
@@ -193,6 +197,14 @@ public class FlowEngineService {
             inst.setStatus("TERMINATE".equals(snap.rejectPolicy()) ? "TERMINATED" : "REJECTED");
         }
         instanceMapper.updateById(inst);
+
+        // 审批结果回写：终审通过 → onApproved；驳回/终止 → onRejected（业务表状态联动 + 库存回滚）
+        if ("COMPLETED".equals(inst.getStatus())) {
+            notifyApproved(inst.getBusinessType(), inst.getBusinessId());
+        } else if ("REJECTED".equals(inst.getStatus()) || "TERMINATED".equals(inst.getStatus())) {
+            notifyRejected(inst.getBusinessType(), inst.getBusinessId());
+        }
+
         return instanceView(instanceMapper.selectById(inst.getId()));
     }
 
@@ -203,6 +215,50 @@ public class FlowEngineService {
             throw BizException.notFound();
         }
         return instanceView(inst);
+    }
+
+    /** 按业务类型 + 业务主键查实例视图（供业务详情挂载审批时间线），无则返回 null。 */
+    public Map<String, Object> instanceByBusiness(String businessType, String businessId) {
+        FlowInstance inst = instanceMapper.selectOne(
+                new LambdaQueryWrapper<FlowInstance>()
+                        .eq(FlowInstance::getBusinessType, businessType)
+                        .eq(FlowInstance::getBusinessId, businessId)
+                        .last("LIMIT 1"));
+        return inst == null ? null : instanceView(inst);
+    }
+
+    /** 批量按业务主键查实例视图（反 N+1），返回 businessId → instanceView。 */
+    public Map<String, Map<String, Object>> instancesByBusiness(String businessType, Collection<String> businessIds) {
+        Map<String, Map<String, Object>> out = new LinkedHashMap<>();
+        if (businessIds == null || businessIds.isEmpty()) {
+            return out;
+        }
+        List<FlowInstance> list = instanceMapper.selectList(
+                new LambdaQueryWrapper<FlowInstance>()
+                        .eq(FlowInstance::getBusinessType, businessType)
+                        .in(FlowInstance::getBusinessId, businessIds));
+        for (FlowInstance inst : list) {
+            out.put(inst.getBusinessId(), instanceView(inst));
+        }
+        return out;
+    }
+
+    // ---- 审批结果回调 ----
+
+    private void notifyApproved(String businessType, String businessId) {
+        for (ApprovalResultHandler h : approvalHandlers) {
+            if (businessType.equals(h.businessType())) {
+                h.onApproved(businessId);
+            }
+        }
+    }
+
+    private void notifyRejected(String businessType, String businessId) {
+        for (ApprovalResultHandler h : approvalHandlers) {
+            if (businessType.equals(h.businessType())) {
+                h.onRejected(businessId);
+            }
+        }
     }
 
     // ---- 数据范围判定 ----
