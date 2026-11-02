@@ -9,6 +9,8 @@
  *    任何大屏接口与下钻结果中（AC-DD5-2）。
  */
 
+import type { FlowInstance } from "./flow";
+
 /** 统计时间维度：学期（默认，聚合/鉴权口径） / 自然月（仅展示维度） */
 export type StatDim = "TERM" | "MONTH";
 
@@ -172,6 +174,13 @@ export interface SpaceItem {
   openScope?: string;
 }
 
+/** 维修人员（R-REPAIRMAN 角色，分派维修人下拉） */
+export interface Repairman {
+  id: string;
+  username: string;
+  realName: string;
+}
+
 /** 报修工单（后端 RepairService.view 字段） */
 export type RepairTicket = {
   id: string;
@@ -182,10 +191,15 @@ export type RepairTicket = {
   faultType: string;
   termId?: string;
   status: string;
+  /** 维修人 userId（需前端翻译成姓名） */
   assignedTo?: string;
+  /** 后端可能下发的维修人姓名（兼容） */
+  assignedToName?: string;
   assignedAt?: string;
   completedAt?: string;
   createdAt?: string;
+  /** 审批进度（后端附带，结构同 @/api/flow.ts FlowInstance；旧数据可能无实例为 null） */
+  flow?: FlowInstance | null;
 };
 
 /** 物资领用申请（后端 MaterialService.view 字段） */

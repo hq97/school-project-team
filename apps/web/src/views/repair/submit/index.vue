@@ -32,7 +32,8 @@ const ROLE_LABEL: Record<string, string> = {
   "R-LOGISTICS": "后勤主任",
   "R-MORAL": "德育主任",
   "R-GRADE": "年级组长",
-  "R-TEACHER": "教师"
+  "R-TEACHER": "教师",
+  "R-REPAIRMAN": "维修人员"
 };
 const roleLabel = (c: string) => ROLE_LABEL[c] ?? c;
 
@@ -134,7 +135,7 @@ onMounted(() => {
             </el-step>
           </el-steps>
           <div v-else-if="flowLoaded" class="rp__empty">
-            流程未配置<span v-if="!flowLoading">，请联系管理员在「报修配置」中设置审批流</span>
+            流程未配置<span v-if="!flowLoading">，请联系管理员在「流程模板管理」中设置审批流</span>
           </div>
         </div>
       </section>

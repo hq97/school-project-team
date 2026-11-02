@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Plus, Refresh, Delete, Top, Bottom } from "@element-plus/icons-vue";
+import { Plus, Refresh } from "@element-plus/icons-vue";
 import {
   listFaultTypes,
   createFaultType,
@@ -11,16 +11,13 @@ import {
   createConfigSpace,
   updateConfigSpace,
   deleteConfigSpace,
-  listRepairFlow,
-  updateRepairFlow,
 } from "@/api/biz";
 import type { FaultTypeItem, SpaceConfig } from "@/api/types";
-import { listRoles, type SysRole } from "@/api/system";
 
 /**
- * 报修配置 M0405 /repair/config：统一管理故障类型 / 报修位置 / 审批流程。
+ * 报修配置 M0405 /repair/config：统一管理故障类型 / 报修位置。
+ * 审批流程已收归流程模板管理（M0507），本页不再维护。
  * 按钮权限：BTN-REP-CONFIG（增删改统一按钮码，v-perms 仅隐藏入口，服务端 40302 为边界）。
- * 后端并行开发中，前端按契约 {success:true, data} 实现。
  */
 
 const tab = ref("fault");
@@ -259,93 +256,9 @@ async function removeSp(row: SpaceConfig) {
   }
 }
 
-/* ===================== 审批流程 ===================== */
-const flowLoading = ref(false);
-const savingFlow = ref(false);
-const flowName = ref("");
-const flowNodes = ref<{ name: string; approveRole: string; timeoutHours?: number }[]>([]);
-const roles = ref<SysRole[]>([]);
-
-async function loadFlow() {
-  flowLoading.value = true;
-  try {
-    const flow = await listRepairFlow();
-    flowName.value = flow?.name ?? "";
-    flowNodes.value = (flow?.nodes ?? [])
-      .slice()
-      .sort((a, b) => a.seq - b.seq)
-      .map((n) => ({
-        name: n.name,
-        approveRole: n.approveRole,
-        timeoutHours: n.timeoutHours ?? undefined
-      }));
-  } catch {
-    flowName.value = "";
-    flowNodes.value = [];
-  } finally {
-    flowLoading.value = false;
-  }
-}
-
-async function ensureRoles() {
-  if (roles.value.length > 0) return;
-  try {
-    roles.value = await listRoles();
-  } catch {
-    ElMessage.error("加载角色列表失败");
-  }
-}
-
-function addNode() {
-  flowNodes.value.push({ name: "", approveRole: "", timeoutHours: undefined });
-}
-
-function removeNode(i: number) {
-  if (flowNodes.value.length <= 1) {
-    ElMessage.warning("流程至少需要一个审批节点");
-    return;
-  }
-  flowNodes.value.splice(i, 1);
-}
-
-function moveNode(i: number, dir: -1 | 1) {
-  const j = i + dir;
-  if (j < 0 || j >= flowNodes.value.length) return;
-  const tmp = flowNodes.value[i];
-  flowNodes.value[i] = flowNodes.value[j];
-  flowNodes.value[j] = tmp;
-}
-
-async function saveFlow() {
-  for (const n of flowNodes.value) {
-    if (!n.name.trim() || !n.approveRole) {
-      ElMessage.warning("每个节点都需填写名称与审批角色");
-      return;
-    }
-  }
-  savingFlow.value = true;
-  try {
-    await updateRepairFlow(
-      flowNodes.value.map((n) => ({
-        name: n.name.trim(),
-        approveRole: n.approveRole,
-        timeoutHours: n.timeoutHours
-      }))
-    );
-    ElMessage.success("报修审批流已保存");
-    loadFlow();
-  } catch {
-    ElMessage.error("保存流程失败");
-  } finally {
-    savingFlow.value = false;
-  }
-}
-
 onMounted(() => {
   loadFaultTypes();
   loadSpaces();
-  loadFlow();
-  ensureRoles();
 });
 </script>
 
@@ -354,7 +267,7 @@ onMounted(() => {
     <header class="rc__hd">
       <div>
         <h2 class="rc__title">报修配置</h2>
-        <p class="rc__sub">统一管理故障类型 / 报修位置 / 报修审批流程</p>
+        <p class="rc__sub">统一管理故障类型 / 报修位置</p>
       </div>
     </header>
 
@@ -431,78 +344,6 @@ onMounted(() => {
               </template>
             </el-table-column>
           </el-table>
-        </el-tab-pane>
-
-        <!-- ================= 审批流程 ================= -->
-        <el-tab-pane label="审批流程" name="flow">
-          <div class="rc__tab-tools">
-            <div class="rc__flow-name">
-              当前流程：<strong>{{ flowName || "未配置" }}</strong>
-            </div>
-            <div class="rc__tab-tools-right">
-              <el-button :loading="flowLoading" @click="loadFlow">
-                <el-icon><Refresh /></el-icon>&nbsp;刷新
-              </el-button>
-              <el-button v-perms="'BTN-REP-CONFIG'" type="primary" :loading="savingFlow" @click="saveFlow">
-                保存流程
-              </el-button>
-            </div>
-          </div>
-
-          <div v-loading="flowLoading" class="rc__nodes">
-            <div class="rc__node-head">
-              <span class="rc__node-col rc__node-col--seq">顺序</span>
-              <span class="rc__node-col rc__node-col--name">节点名称</span>
-              <span class="rc__node-col rc__node-col--role">审批角色</span>
-              <span class="rc__node-col rc__node-col--timeout">超时(h)</span>
-              <span class="rc__node-col rc__node-col--ops">操作</span>
-            </div>
-            <div v-for="(n, i) in flowNodes" :key="i" class="rc__node-row">
-              <span class="rc__node-col rc__node-col--seq">
-                <span class="rc__seq">{{ i + 1 }}</span>
-              </span>
-              <span class="rc__node-col rc__node-col--name">
-                <el-input v-model="n.name" placeholder="节点名称，如 部门审批" />
-              </span>
-              <span class="rc__node-col rc__node-col--role">
-                <el-select v-model="n.approveRole" placeholder="审批角色" filterable style="width: 100%">
-                  <el-option
-                    v-for="r in roles"
-                    :key="r.code"
-                    :label="`${r.name}（${r.code}）`"
-                    :value="r.code"
-                  />
-                </el-select>
-              </span>
-              <span class="rc__node-col rc__node-col--timeout">
-                <el-input-number
-                  v-model="n.timeoutHours"
-                  :min="1"
-                  :max="720"
-                  controls-position="right"
-                  placeholder="h"
-                  style="width: 100%"
-                />
-              </span>
-              <span class="rc__node-col rc__node-col--ops">
-                <el-button link @click="moveNode(i, -1)" :disabled="i === 0">
-                  <el-icon><Top /></el-icon>
-                </el-button>
-                <el-button link @click="moveNode(i, 1)" :disabled="i === flowNodes.length - 1">
-                  <el-icon><Bottom /></el-icon>
-                </el-button>
-                <el-button v-perms="'BTN-REP-CONFIG'" link type="danger" @click="removeNode(i)">
-                  <el-icon><Delete /></el-icon>
-                </el-button>
-              </span>
-            </div>
-            <div v-if="flowNodes.length === 0" class="rc__nodes-empty">
-              流程未配置，请先添加审批节点
-            </div>
-            <el-button v-perms="'BTN-REP-CONFIG'" link type="primary" @click="addNode">
-              <el-icon><Plus /></el-icon>&nbsp;添加节点
-            </el-button>
-          </div>
         </el-tab-pane>
       </el-tabs>
     </section>
@@ -599,74 +440,5 @@ onMounted(() => {
   justify-content: space-between;
   gap: var(--sa-space-2);
   margin-bottom: var(--sa-space-3);
-}
-.rc__tab-tools-right {
-  display: flex;
-  gap: var(--sa-space-2);
-}
-.rc__flow-name {
-  font-size: var(--sa-fs-13);
-  color: var(--sa-text-2);
-}
-.rc__flow-name strong {
-  color: var(--sa-text-1);
-}
-.rc__nodes {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sa-space-2);
-}
-.rc__node-head,
-.rc__node-row {
-  display: flex;
-  align-items: center;
-  gap: var(--sa-space-2);
-}
-.rc__node-head {
-  padding-bottom: var(--sa-space-1);
-  border-bottom: 1px solid var(--sa-border-2);
-  font-size: var(--sa-fs-12);
-  color: var(--sa-text-3);
-}
-.rc__node-col--seq {
-  width: 48px;
-  flex-shrink: 0;
-  text-align: center;
-}
-.rc__node-col--name {
-  width: 220px;
-  flex-shrink: 0;
-}
-.rc__node-col--role {
-  flex: 1;
-  min-width: 160px;
-}
-.rc__node-col--timeout {
-  width: 140px;
-  flex-shrink: 0;
-}
-.rc__node-col--ops {
-  width: 110px;
-  flex-shrink: 0;
-  display: flex;
-  gap: 0;
-  justify-content: flex-end;
-}
-.rc__seq {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--sa-primary);
-  color: var(--sa-text-inverse);
-  font-size: var(--sa-fs-12);
-}
-.rc__nodes-empty {
-  padding: var(--sa-space-5);
-  text-align: center;
-  color: var(--sa-text-3);
-  font-size: var(--sa-fs-13);
 }
 </style>

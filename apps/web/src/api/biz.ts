@@ -9,6 +9,7 @@ import type {
   RepairFlow,
   RepairStats,
   RepairTicket,
+  Repairman,
   SpaceConfig,
   SpaceItem,
   StatDim,
@@ -108,20 +109,21 @@ export function listRepairTickets(status?: string) {
   );
 }
 
-/** 分派维修人（BTN-REP-ASSIGN，M0403）：PENDING → ASSIGNED */
-export function assignRepair(id: string, assignedTo: string) {
-  return unwrap(
-    http.request<ApiResp<RepairTicket>>("put", `/api/repair/tickets/${id}/assign`, {
-      data: { assignedTo },
-    })
-  );
+/** 报修工单详情（M0402/M0403，含 flow 审批进度） */
+export function repairDetail(id: string) {
+  return unwrap(http.request<ApiResp<RepairTicket>>("get", `/api/repair/tickets/${id}`));
 }
 
-/** 更新工单状态（BTN-REP-STATUS，M0403）：ASSIGNED → PROCESSING → COMPLETED / CANCELLED */
-export function updateRepairStatus(id: string, status: string) {
+/** 维修人员下拉（R-REPAIRMAN 角色，分派维修人用） */
+export function listRepairmen() {
+  return unwrap(http.request<ApiResp<Repairman[]>>("get", "/api/repair/repairmen"));
+}
+
+/** 分派维修人（BTN-REP-ASSIGN，M0403）：PENDING → ASSIGNED，body { repairmanId } */
+export function assignRepair(id: string, repairmanId: string) {
   return unwrap(
-    http.request<ApiResp<RepairTicket>>("put", `/api/repair/tickets/${id}/status`, {
-      data: { status },
+    http.request<ApiResp<RepairTicket>>("put", `/api/repair/tickets/${id}/assign`, {
+      data: { repairmanId },
     })
   );
 }
@@ -133,18 +135,9 @@ export function repairStats() {
 
 /* ===================== 报修配置（M0405，按钮 BTN-REP-CONFIG） ===================== */
 
-/** 报修审批流（M0401 左半流程展示用；M0405 流程配置也读它） */
+/** 报修审批流（M0401 左半流程展示用；流程配置收归流程模板管理 M0507） */
 export function listRepairFlow() {
   return unwrap(http.request<ApiResp<RepairFlow>>("get", "/api/repair/flow"));
-}
-
-/** 按顺序重建报修审批流节点（BTN-REP-CONFIG） */
-export function updateRepairFlow(nodes: { name: string; approveRole: string; timeoutHours?: number }[]) {
-  return unwrap(
-    http.request<ApiResp<RepairFlow>>("put", "/api/repair/config/flow", {
-      data: { nodes },
-    })
-  );
 }
 
 /** 故障类型列表（DICT-FAULT-TYPE 统一管理） */
