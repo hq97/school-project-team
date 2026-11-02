@@ -225,6 +225,7 @@ async function submitRoles() {
     await assignUserRoles(roleDialog.id, roleDialog.checked);
     ElMessage.success("角色已分配");
     roleDialog.visible = false;
+    load();
   } catch (e) {
     ElMessage.error("分配失败");
   } finally {

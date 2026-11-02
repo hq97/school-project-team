@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Plus, Refresh, Delete, ArrowUp, ArrowDown } from "@element-plus/icons-vue";
+import { Plus, Refresh, Delete, Top, Bottom } from "@element-plus/icons-vue";
 import {
   listFlowTemplates,
   createFlowTemplate,
