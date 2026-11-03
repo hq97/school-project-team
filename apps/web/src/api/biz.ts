@@ -14,6 +14,7 @@ import type {
   SpaceConfig,
   SpaceItem,
   StatDim,
+  TeacherCourse,
   TimeSlot,
   TimetableEntry,
 } from "./types";
@@ -271,12 +272,56 @@ export function listScheduleSpaces() {
   return unwrap(http.request<ApiResp<SpaceItem[]>>("get", "/api/schedule/spaces"));
 }
 
+/* ===================== 排课基础数据（M0601，按钮 BTN-SCH-BASIC） ===================== */
+
+/** 教师任课表列表（可按学期过滤） */
+export function listTeacherCourses(termId?: string) {
+  return unwrap(
+    http.request<ApiResp<TeacherCourse[]>>("get", "/api/schedule/teacher-courses", {
+      params: { termId },
+    })
+  );
+}
+
+/** 新增教师任课 */
+export function createTeacherCourse(payload: {
+  teacherId: string;
+  classId: string;
+  subject: string;
+  termId: string;
+}) {
+  return unwrap(
+    http.request<ApiResp<TeacherCourse>>("post", "/api/schedule/teacher-courses", {
+      data: payload,
+    })
+  );
+}
+
+/** 编辑教师任课 */
+export function updateTeacherCourse(
+  id: string,
+  payload: { teacherId: string; classId: string; subject: string; termId: string }
+) {
+  return unwrap(
+    http.request<ApiResp<TeacherCourse>>("put", `/api/schedule/teacher-courses/${id}`, {
+      data: payload,
+    })
+  );
+}
+
+/** 删除教师任课 */
+export function deleteTeacherCourse(id: string) {
+  return unwrap(
+    http.request<ApiResp<unknown>>("delete", `/api/schedule/teacher-courses/${id}`)
+  );
+}
+
 /** 手动排课（BTN-SCH-ARRANGE，M0602）：POST /api/schedule/entries，冲突返回 409 */
 export function createScheduleEntry(payload: {
   classId: string;
   subject: string;
   teacherId: string;
-  spaceId: string;
+  spaceId?: string;
   termId: string;
   week: number;
   dayOfWeek: number;

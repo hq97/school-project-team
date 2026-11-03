@@ -308,6 +308,15 @@ export interface ScheduleChange {
   flow?: FlowInstance | null;
 }
 
+/** 教师任课表（GET /api/schedule/teacher-courses，M0601） */
+export interface TeacherCourse {
+  id: string;
+  teacherId: string;
+  classId: string;
+  subject: string;
+  termId: string;
+}
+
 /**
  * 统一错误码（docs/04 §五、docs/02 §三、ADR §4.1 C9）
  * ---------------------------------------------------------------------------
