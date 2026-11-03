@@ -10,10 +10,12 @@ import type {
   RepairStats,
   RepairTicket,
   Repairman,
+  ScheduleChange,
   SpaceConfig,
   SpaceItem,
   StatDim,
   TimeSlot,
+  TimetableEntry,
 } from "./types";
 
 /** 统一业务接口（物资 / 报修 / 场地预约 / 请假 / 调课） */
@@ -246,16 +248,98 @@ export function applyLeave(payload: {
   );
 }
 
-/** 调课 / 代课申请（BTN-SCH-CHANGE-APPLY，M0801） */
+/** 调课 / 代课申请（BTN-SCH-CHANGE-APPLY，M0801）：POST /api/schedule-change/apply */
 export function applyScheduleChange(payload: {
+  type: ScheduleChange["type"];
+  entryId: string;
+  targetDayOfWeek?: number;
+  targetPeriod?: number;
+  substituteTeacherId?: string;
   reason: string;
-  periods: number;
-  remark?: string;
 }) {
   return unwrap(
-    http.request<ApiResp<{ applyNo: string }>>("post", "/api/schedule-change/apply", {
+    http.request<ApiResp<ScheduleChange>>("post", "/api/schedule-change/apply", {
       data: payload,
     })
+  );
+}
+
+/* ===================== 教务域（排课 / 查课 / 调课代课） ===================== */
+
+/** 可排课场地列表（GET /api/schedule/spaces，复用 SpaceItem 结构） */
+export function listScheduleSpaces() {
+  return unwrap(http.request<ApiResp<SpaceItem[]>>("get", "/api/schedule/spaces"));
+}
+
+/** 手动排课（BTN-SCH-ARRANGE，M0602）：POST /api/schedule/entries，冲突返回 409 */
+export function createScheduleEntry(payload: {
+  classId: string;
+  subject: string;
+  teacherId: string;
+  spaceId: string;
+  termId: string;
+  week: number;
+  dayOfWeek: number;
+  period: number;
+}) {
+  return unwrap(
+    http.request<ApiResp<TimetableEntry>>("post", "/api/schedule/entries", {
+      data: payload,
+    })
+  );
+}
+
+/** 课表发布（BTN-SCH-PUBLISH，M0602）：POST /api/schedule/publish */
+export function publishSchedule(payload: {
+  termId: string;
+  effectiveWeek: number;
+  baseVersion?: string;
+}) {
+  return unwrap(
+    http.request<
+      ApiResp<{ versionId: string; version: number; effectiveWeek: number; status: string }>
+    >("post", "/api/schedule/publish", { data: payload })
+  );
+}
+
+/** 教师个人课表（M0701） */
+export function listMyTimetable(week: number) {
+  return unwrap(
+    http.request<ApiResp<TimetableEntry[]>>("get", "/api/schedule/my-timetable", {
+      params: { week },
+    })
+  );
+}
+
+/** 班级课表（M0702） */
+export function listClassTimetable(classId: string, week: number) {
+  return unwrap(
+    http.request<ApiResp<TimetableEntry[]>>("get", "/api/schedule/class-timetable", {
+      params: { classId, week },
+    })
+  );
+}
+
+/** 全校课表（M0703，需 BTN-SCH-VIEW-ALL） */
+export function listSchoolTimetable(week: number) {
+  return unwrap(
+    http.request<ApiResp<TimetableEntry[]>>("get", "/api/schedule/school-timetable", {
+      params: { week },
+    })
+  );
+}
+
+/** 我的调课 / 代课申请（M0802，附 flow） */
+export function listMyScheduleChanges() {
+  return unwrap(
+    http.request<ApiResp<ScheduleChange[]>>("get", "/api/schedule-change/my")
+  );
+}
+
+/** 调课 / 代课申请详情（M0802/M0803，附 flow） */
+export function scheduleChangeDetail(id: string) {
+  return unwrap(
+    http.request<ApiResp<ScheduleChange>>("get", `/api/schedule-change/${id}`)
   );
 }
 

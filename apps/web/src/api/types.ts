@@ -11,6 +11,8 @@
 
 import type { FlowInstance } from "./flow";
 
+export type { FlowTodo } from "./flow";
+
 /** 统计时间维度：学期（默认，聚合/鉴权口径） / 自然月（仅展示维度） */
 export type StatDim = "TERM" | "MONTH";
 
@@ -267,6 +269,43 @@ export interface TimeSlot {
   week: number;
   dayOfWeek: number; // 1=周一
   period: number; // 节次
+}
+
+/** 调课 / 代课类型 */
+export type ScheduleChangeType = "CHANGE" | "SUBSTITUTE" | "LEAVE_SUBSTITUTE";
+
+/** 课表条目（GET /api/schedule/my-timetable、class-timetable、school-timetable） */
+export interface TimetableEntry {
+  id: string;
+  versionId?: string;
+  spaceId: string;
+  teacherId: string;
+  classId: string;
+  subject: string;
+  termId: string;
+  week: number;
+  /** 星期，1=周一 */
+  dayOfWeek: number;
+  /** 节次 */
+  period: number;
+  substituteTeacherId?: string;
+}
+
+/** 调课 / 代课申请（ScheduleChange，附 flow 审批进度） */
+export interface ScheduleChange {
+  id: string;
+  applyNo: string;
+  applicantId: string;
+  termId?: string;
+  /** 目标时段（调课 CHANGE 时） */
+  targetSlot?: { dayOfWeek?: number; period?: number };
+  type: ScheduleChangeType;
+  entryId: string;
+  substituteTeacherId?: string;
+  reason: string;
+  status: string;
+  /** 审批进度（后端附带，旧数据可能无实例为 null） */
+  flow?: FlowInstance | null;
 }
 
 /**

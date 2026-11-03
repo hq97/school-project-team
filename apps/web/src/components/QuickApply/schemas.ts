@@ -2,7 +2,6 @@ import { ref } from "vue";
 import {
   applyLeave,
   applyMaterial,
-  applyScheduleChange,
   bookSpace,
   listFreeSlots,
   submitRepair,
@@ -131,33 +130,7 @@ export const schemas: Record<string, QuickSchema> = {
     stepText: "2 步：点「请假申请」→ 填写提交",
   },
 
-  /** ④ 调课 / 代课申请（M0801） */
-  scheduleChangeApply: {
-    code: "scheduleChangeApply",
-    title: "调课 / 代课申请",
-    btnCode: "BTN-SCH-CHANGE-APPLY",
-    menuCode: "M0801",
-    fields: [
-      { key: "reason", label: "调整原因", type: "select", required: true, cols: 12, options: [
-        { label: "因公外出", value: "OUT" },
-        { label: "病假", value: "SICK" },
-        { label: "事假", value: "PERSONAL" },
-        { label: "教研活动", value: "RESEARCH" },
-      ] },
-      { key: "periods", label: "涉及节次", type: "number", required: true, cols: 12, min: 1, max: 12, unit: "节" },
-      { key: "remark", label: "说明", type: "textarea", cols: 24, max: 200 },
-    ],
-    submit: (p) =>
-      applyScheduleChange({
-        reason: String(p.reason),
-        periods: Number(p.periods),
-        remark: String(p.remark ?? ""),
-      }),
-    successText: (r) => `已提交，单号 ${r.applyNo}，由教务主任审批`,
-    stepText: "2 步：点「调课/代课」→ 填写提交",
-  },
-
-  /** ⑤ 会议室预约（M1204）—— 场地冲突高发，走 40901/40902 统一错误态 */
+  /** ④ 会议室预约（M1204）—— 场地冲突高发，走 40901/40902 统一错误态 */
   meetingRoomBook: {
     code: "meetingRoomBook",
     title: "会议室预约",
@@ -211,7 +184,6 @@ export const TEACHER_QUICK_ACTIONS = [
   "materialApply",
   "repairSubmit",
   "leaveApply",
-  "scheduleChangeApply",
   "meetingRoomBook",
   "labBook",
 ] as const;
