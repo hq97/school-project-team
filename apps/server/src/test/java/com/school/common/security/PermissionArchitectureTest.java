@@ -47,7 +47,8 @@ public class PermissionArchitectureTest {
             "com.school.material",
             "com.school.repair",
             "com.school.asset",
-            "com.school.dashboard"
+            "com.school.dashboard",
+            "com.school.schedule"
     };
 
     private static boolean residesInBusinessPackage(JavaClass input) {
